@@ -46,15 +46,22 @@
 #' @export
 band_polygon <- function(d, by) {
   d <- d[is.finite(d$lo) & is.finite(d$hi), , drop = FALSE]
-  if (!nrow(d)) return(NULL)
+  if (!nrow(d)) {
+    return(NULL)
+  }
   d <- d[order(d$mean), , drop = FALSE]
   run <- c(0, cumsum(diff(d$mean) > by * 1.5))
-  out <- do.call(rbind, lapply(unique(run), function(k) {
-    g <- d[run == k, , drop = FALSE]
-    data.frame(mean = c(g$mean, rev(g$mean), g$mean[1]),
-               y    = c(g$hi,   rev(g$lo),   g$hi[1]),
-               ring = k)
-  }))
+  out <- do.call(
+    rbind,
+    lapply(unique(run), function(k) {
+      g <- d[run == k, , drop = FALSE]
+      data.frame(
+        mean = c(g$mean, rev(g$mean), g$mean[1]),
+        y = c(g$hi, rev(g$lo), g$hi[1]),
+        ring = k
+      )
+    })
+  )
   rownames(out) <- NULL
   out
 }
@@ -183,8 +190,11 @@ sd_delta <- function(mean, n, lower, upper, tol = 1e-9) {
   R <- upper - lower
   nl <- n * (upper - mean) / R
   nu <- n * (mean - lower) / R
-  fr <- function(x) { f <- x - floor(x); ifelse(f > 1 - tol, 0, f) }
-  muil <- n * (upper - mean) * (mean - lower)   # SS of the uncorrected bound
-  ss <- muil - fr(nl) * fr(nu) * R^2            # SS of the sharp bound
+  fr <- function(x) {
+    f <- x - floor(x)
+    ifelse(f > 1 - tol, 0, f)
+  }
+  muil <- n * (upper - mean) * (mean - lower) # SS of the uncorrected bound
+  ss <- muil - fr(nl) * fr(nu) * R^2 # SS of the sharp bound
   ifelse(muil <= 0, 1, pmax(0, ss) / muil)
 }

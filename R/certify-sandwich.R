@@ -80,14 +80,24 @@
 # must not be admitted even when it lands exactly on an integer.
 .k_window <- function(S, Q_lo, Q_hi, lo_incl, hi_incl, n, W, tol = 1e-9) {
   k_lo <- ceiling(Q_lo - tol)
-  if (!lo_incl && abs(k_lo - Q_lo) < tol) k_lo <- k_lo + 1
+  if (!lo_incl && abs(k_lo - Q_lo) < tol) {
+    k_lo <- k_lo + 1
+  }
   k_hi <- floor(Q_hi + tol)
-  if (!hi_incl && abs(k_hi - Q_hi) < tol) k_hi <- k_hi - 1
+  if (!hi_incl && abs(k_hi - Q_hi) < tol) {
+    k_hi <- k_hi - 1
+  }
   k_lo <- max(k_lo, .q_min_int(S, n))
   k_hi <- min(k_hi, .q_max_int(S, W))
-  if ((k_lo %% 2) != (S %% 2)) k_lo <- k_lo + 1
-  if ((k_hi %% 2) != (S %% 2)) k_hi <- k_hi - 1
-  if (k_lo > k_hi) return(NULL)
+  if ((k_lo %% 2) != (S %% 2)) {
+    k_lo <- k_lo + 1
+  }
+  if ((k_hi %% 2) != (S %% 2)) {
+    k_hi <- k_hi - 1
+  }
+  if (k_lo > k_hi) {
+    return(NULL)
+  }
   c(k_lo, k_hi)
 }
 
@@ -129,8 +139,10 @@
     # The i - 1 values after this one are all <= y, so y must be at least
     # S / i; and it cannot exceed the running cap or the sum itself.
     y_hi <- min(cap, S)
-    y_lo <- (S + i - 1) %/% i          # ceiling(S / i), without leaving integers
-    if (y_lo > y_hi) return(NULL)
+    y_lo <- (S + i - 1) %/% i # ceiling(S / i), without leaving integers
+    if (y_lo > y_hi) {
+      return(NULL)
+    }
     ys <- y_lo:y_hi
 
     j <- i - 1
@@ -153,17 +165,23 @@
     qM <- nu * ys * ys + rem * rem
     qM[!is.finite(qM)] <- 0
 
-    lo <- kl; ix <- qm > kl; lo[ix] <- qm[ix]
-    hi <- kh; ix <- qM < kh; hi[ix] <- qM[ix]
+    lo <- kl
+    ix <- qm > kl
+    lo[ix] <- qm[ix]
+    hi <- kh
+    ix <- qM < kh
+    hi[ix] <- qM[ix]
     lo <- lo + ((lo %% 2) != (Sp %% 2))
     # `Sp >= 0` and `Sp <= j * ys` need no test: the first is implied by
     # y_hi <= S, the second by y_lo >= S / i, which gives i*y >= S and hence
     # (i - 1)*y >= S - y.
     ok <- lo <= hi
-    if (!any(ok)) return(NULL)
+    if (!any(ok)) {
+      return(NULL)
+    }
 
     wid <- qM - qm
-    deg <- wid == 0                    # a sandwich of one value: a forced child
+    deg <- wid == 0 # a sandwich of one value: a forced child
     wid[deg] <- 1
     pos <- ((lo + hi) / 2 - qm) / wid
     pos[deg] <- 0.5
@@ -182,9 +200,13 @@
   # inspects its arguments through match.arg() and two vapply() passes before
   # sorting anything, which costs several times the sort itself at these
   # lengths.
-  f_i <- numeric(n); f_S <- numeric(n)
-  f_lo <- numeric(n); f_hi <- numeric(n)
-  f_at <- integer(n); f_pick <- integer(n); f_sorted <- logical(n)
+  f_i <- numeric(n)
+  f_S <- numeric(n)
+  f_lo <- numeric(n)
+  f_hi <- numeric(n)
+  f_at <- integer(n)
+  f_pick <- integer(n)
+  f_sorted <- logical(n)
   kids <- vector("list", n)
   scs <- vector("list", n)
   acc <- numeric(n)
@@ -194,13 +216,19 @@
   hit <- NULL
 
   root <- children(n, W, S, k_lo, k_hi)
-  if (is.null(root))
+  if (is.null(root)) {
     return(list(possible = FALSE, witness = NULL, nodes = nodes))
+  }
 
   d <- 1L
-  f_i[1] <- n; f_S[1] <- S; f_lo[1] <- k_lo; f_hi[1] <- k_hi
-  f_at[1] <- 0L; f_sorted[1] <- FALSE
-  kids[[1]] <- root$y; scs[[1]] <- root$sc
+  f_i[1] <- n
+  f_S[1] <- S
+  f_lo[1] <- k_lo
+  f_hi[1] <- k_hi
+  f_at[1] <- 0L
+  f_sorted[1] <- FALSE
+  kids[[1]] <- root$y
+  scs[[1]] <- root$sc
 
   while (d > 0L) {
     if (nodes >= budget) {
@@ -208,21 +236,24 @@
       break
     }
     cd <- kids[[d]]
-    if (!f_sorted[d]) {                     # first visit: best child only
+    if (!f_sorted[d]) {
+      # first visit: best child only
       k <- which.min(scs[[d]])
       y <- cd[k]
       f_pick[d] <- k
       f_sorted[d] <- TRUE
       f_at[d] <- 0L
-    } else if (f_at[d] == 0L) {             # returned to: order the rest, once
+    } else if (f_at[d] == 0L) {
+      # returned to: order the rest, once
       sc <- scs[[d]]
-      sc[f_pick[d]] <- Inf                  # the child already tried sorts last
+      sc[f_pick[d]] <- Inf # the child already tried sorts last
       kids[[d]] <- cd[order(sc)][seq_len(length(cd) - 1L)]
       f_at[d] <- 1L
       next
     } else {
       at <- f_at[d]
-      if (at > length(cd)) {                # this subtree is exhausted
+      if (at > length(cd)) {
+        # this subtree is exhausted
         d <- d - 1L
         next
       }
@@ -231,7 +262,8 @@
     }
     acc[d] <- y
     nodes <- nodes + 1
-    if (f_i[d] == 1) {                      # every value placed, window met
+    if (f_i[d] == 1) {
+      # every value placed, window met
       hit <- acc
       break
     }
@@ -242,14 +274,22 @@
     nc <- children(ni, y, nS, nlo, nhi)
     if (!is.null(nc)) {
       d <- d + 1L
-      f_i[d] <- ni; f_S[d] <- nS; f_lo[d] <- nlo; f_hi[d] <- nhi
-      f_at[d] <- 0L; f_sorted[d] <- FALSE; f_pick[d] <- 0L
-      kids[[d]] <- nc$y; scs[[d]] <- nc$sc
+      f_i[d] <- ni
+      f_S[d] <- nS
+      f_lo[d] <- nlo
+      f_hi[d] <- nhi
+      f_at[d] <- 0L
+      f_sorted[d] <- FALSE
+      f_pick[d] <- 0L
+      kids[[d]] <- nc$y
+      scs[[d]] <- nc$sc
     }
   }
 
   if (!is.null(hit)) {
-    if (flip) hit <- W - hit
+    if (flip) {
+      hit <- W - hit
+    }
     return(list(possible = TRUE, witness = hit, nodes = nodes))
   }
   list(possible = if (capped) NA else FALSE, witness = NULL, nodes = nodes)
@@ -263,14 +303,27 @@
 # Returns TRUE / FALSE / NA, with NA meaning "no verdict within budget" --
 # the caller then falls back to .attainable_target().
 .certify_fast <- function(W, n, tg, budget = 2e5) {
-  if (is.null(tg) || !nrow(tg)) return(FALSE)
+  if (is.null(tg) || !nrow(tg)) {
+    return(FALSE)
+  }
   unknown <- FALSE
   for (i in seq_len(nrow(tg))) {
-    kw <- .k_window(tg$S[i], tg$Q_lo[i], tg$Q_hi[i],
-                    tg$lo_incl[i], tg$hi_incl[i], n, W)
-    if (is.null(kw)) next                   # layer 1 settles this candidate
+    kw <- .k_window(
+      tg$S[i],
+      tg$Q_lo[i],
+      tg$Q_hi[i],
+      tg$lo_incl[i],
+      tg$hi_incl[i],
+      n,
+      W
+    )
+    if (is.null(kw)) {
+      next
+    } # layer 1 settles this candidate
     res <- .witness_search(W, n, tg$S[i], kw[1], kw[2], budget = budget)
-    if (isTRUE(res$possible)) return(TRUE)
+    if (isTRUE(res$possible)) {
+      return(TRUE)
+    }
     if (is.na(res$possible)) unknown <- TRUE
   }
   if (unknown) NA else FALSE

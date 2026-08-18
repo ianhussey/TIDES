@@ -27,25 +27,52 @@
 # decimal places of the reported mean. Returns scrutiny's verdict unchanged.
 .grim_compat <- function(x, n, digits, items = 1, rounding = "up_or_down") {
   if (.takes_digits(scrutiny::grim)) {
-    scrutiny::grim(x = x, n = n, digits_x = digits,
-                   items = items, rounding = rounding)
+    scrutiny::grim(
+      x = x,
+      n = n,
+      digits_x = digits,
+      items = items,
+      rounding = rounding
+    )
   } else {
-    scrutiny::grim(x = scrutiny::restore_zeros(x, width = digits), n = n,
-                   items = items, rounding = rounding)
+    scrutiny::grim(
+      x = scrutiny::restore_zeros(x, width = digits),
+      n = n,
+      items = items,
+      rounding = rounding
+    )
   }
 }
 
 # Internal: scrutiny::grimmer() across both interfaces. `digits_x`/`digits_sd`
 # are the decimal places of the reported mean and SD. Returns scrutiny's
 # verdict unchanged.
-.grimmer_compat <- function(x, sd, n, digits_x, digits_sd,
-                            items = 1, rounding = "up_or_down") {
+.grimmer_compat <- function(
+  x,
+  sd,
+  n,
+  digits_x,
+  digits_sd,
+  items = 1,
+  rounding = "up_or_down"
+) {
   if (.takes_digits(scrutiny::grimmer)) {
-    scrutiny::grimmer(x = x, sd = sd, n = n, digits_x = digits_x,
-                      digits_sd = digits_sd, items = items, rounding = rounding)
+    scrutiny::grimmer(
+      x = x,
+      sd = sd,
+      n = n,
+      digits_x = digits_x,
+      digits_sd = digits_sd,
+      items = items,
+      rounding = rounding
+    )
   } else {
-    scrutiny::grimmer(x = scrutiny::restore_zeros(x, width = digits_x),
-                      sd = scrutiny::restore_zeros(sd, width = digits_sd),
-                      n = n, items = items, rounding = rounding)
+    scrutiny::grimmer(
+      x = scrutiny::restore_zeros(x, width = digits_x),
+      sd = scrutiny::restore_zeros(sd, width = digits_sd),
+      n = n,
+      items = items,
+      rounding = rounding
+    )
   }
 }

@@ -32,7 +32,6 @@
 #     bounds are then the ENVELOPE over all exact means consistent with the
 #     report: min over the interval of the floor, max over it of the ceiling.
 
-
 # ---- Layer 0: utilities ------------------------------------------------------
 
 #' Bessel factor
@@ -257,18 +256,24 @@ sd_min_quasi_integer <- function(mean, n) {
 #' @export
 sd_min_two_pin <- function(a, b, n, mean = NULL, Z = "continuous") {
   W <- b - a
-  if (is.null(mean)) return(W / sqrt(2 * (n - 1)))
-  if (n == 2) return(W / sqrt(2))          # band is the single midpoint mean
+  if (is.null(mean)) {
+    return(W / sqrt(2 * (n - 1)))
+  }
+  if (n == 2) {
+    return(W / sqrt(2))
+  } # band is the single midpoint mean
   k <- n - 2
   p <- mean - a
   q <- b - mean
   ss_cont <- p^2 + q^2 + (p - q)^2 / k
   ss <- ss_cont
   if (Z %in% c("integer", "quasiinteger")) {
-    T_int <- n * mean - a - b              # interior sum
-    d <- frac(T_int / k)                   # interior mean's fractional part
+    T_int <- n * mean - a - b # interior sum
+    d <- frac(T_int / k) # interior mean's fractional part
     ss <- ss_cont + k * d * (1 - d)
-    if (Z == "quasiinteger") ss <- ss - frac(T_int) * (1 - frac(T_int))
+    if (Z == "quasiinteger") {
+      ss <- ss - frac(T_int) * (1 - frac(T_int))
+    }
     ss <- max(ss, ss_cont)
   }
   sd_from_ss(ss, n)
@@ -298,19 +303,29 @@ sd_min_two_pin <- function(a, b, n, mean = NULL, Z = "continuous") {
 #' # the mirror case: an observed minimum of 1 alongside a mean of 5
 #' sd_min_one_pin(pin = 1, n = 30, mean = 5, side = "min")
 #' @export
-sd_min_one_pin <- function(pin, n, mean, Z = "continuous", side = c("max", "min")) {
+sd_min_one_pin <- function(
+  pin,
+  n,
+  mean,
+  Z = "continuous",
+  side = c("max", "min")
+) {
   side <- match.arg(side)
   # reflect the observed-minimum case onto the observed-maximum formulas
-  if (side == "min") return(sd_min_one_pin(-pin, n, -mean, Z, side = "max"))
+  if (side == "min") {
+    return(sd_min_one_pin(-pin, n, -mean, Z, side = "max"))
+  }
   k <- n - 1
-  q <- pin - mean                          # distance from mean up to the pin
+  q <- pin - mean # distance from mean up to the pin
   ss_cont <- n * q^2 / (n - 1)
   ss <- ss_cont
   if (Z %in% c("integer", "quasiinteger")) {
-    T_int <- n * mean - pin                # sum of the n - 1 free observations
+    T_int <- n * mean - pin # sum of the n - 1 free observations
     d <- frac(T_int / k)
     ss <- ss_cont + k * d * (1 - d)
-    if (Z == "quasiinteger") ss <- ss - frac(T_int) * (1 - frac(T_int))
+    if (Z == "quasiinteger") {
+      ss <- ss - frac(T_int) * (1 - frac(T_int))
+    }
     ss <- max(ss, ss_cont)
   }
   sd_from_ss(ss, n)
@@ -341,9 +356,13 @@ sd_min_one_pin <- function(pin, n, mean, Z = "continuous", side = c("max", "min"
 #' feasible_mean_band(lower = 1, upper = 7, lower_attained = TRUE,
 #'                    upper_attained = TRUE, n = 30)
 #' @export
-feasible_mean_band <- function(lower = NULL, upper = NULL,
-                               lower_attained = FALSE, upper_attained = FALSE,
-                               n = NULL) {
+feasible_mean_band <- function(
+  lower = NULL,
+  upper = NULL,
+  lower_attained = FALSE,
+  upper_attained = FALSE,
+  n = NULL
+) {
   lo <- if (is.null(lower)) -Inf else lower
   hi <- if (is.null(upper)) Inf else upper
   if (!is.null(n)) {
@@ -351,10 +370,12 @@ feasible_mean_band <- function(lower = NULL, upper = NULL,
       W <- upper - lower
       return(c(lower + W / n, upper - W / n))
     }
-    if (upper_attained && is.finite(lo))
+    if (upper_attained && is.finite(lo)) {
       lo <- max(lo, lower + (upper - lower) / n)
-    if (lower_attained && is.finite(hi))
+    }
+    if (lower_attained && is.finite(hi)) {
       hi <- min(hi, upper - (upper - lower) / n)
+    }
   }
   c(lo, hi)
 }
@@ -385,15 +406,24 @@ v_max_alpha <- function(mean_sum, k, n, item_l, item_u) {
   phi <- T_ - floor(T_ + 1e-12)
   phi <- ifelse(phi > 1 - 1e-9, 0, phi)
   A <- function(jj) h^2 * jj * (n - jj)
-  pmax(0, k * ((1 - th) * A(j) + th * A(j + 1)) - h^2 * (n - 1) * phi * (1 - phi))
+  pmax(
+    0,
+    k * ((1 - th) * A(j) + th * A(j + 1)) - h^2 * (n - 1) * phi * (1 - phi)
+  )
 }
 
 # Internal: all non-negative integer count vectors (c_0, ..., c_{slots-1}) that
 # sum to `total`. Rows enumerate compositions; used for the exact Gini envelope.
 .count_vectors <- function(slots, total) {
-  if (slots == 1L) return(matrix(total, ncol = 1))
-  do.call(rbind, lapply(0:total, function(k)
-    cbind(k, .count_vectors(slots - 1L, total - k))))
+  if (slots == 1L) {
+    return(matrix(total, ncol = 1))
+  }
+  do.call(
+    rbind,
+    lapply(0:total, function(k) {
+      cbind(k, .count_vectors(slots - 1L, total - k))
+    })
+  )
 }
 
 #' Sharp alpha-conditional composite floor via the Gini mean difference
@@ -424,12 +454,18 @@ v_max_alpha <- function(mean_sum, k, n, item_l, item_u) {
 #' @keywords internal
 sd_min_alpha_gini <- function(l, u, n, mean, m, max_profiles = 5e5) {
   N <- round(n * mean)
-  if (abs(n * mean - N) > 1e-9) return(NULL)          # no integer composite
-  target <- N - n * l                                  # required sum of (value - l)
+  if (abs(n * mean - N) > 1e-9) {
+    return(NULL)
+  } # no integer composite
+  target <- N - n * l # required sum of (value - l)
   env <- .alpha_gini_envelope(l, u, n, m, max_profiles)
-  if (is.null(env)) return(NULL)                       # over budget -> fall back
+  if (is.null(env)) {
+    return(NULL)
+  } # over budget -> fall back
   i <- match(target, env$target)
-  if (is.na(i)) return(NULL)
+  if (is.na(i)) {
+    return(NULL)
+  }
   sqrt(env$ss[i] / (n - 1))
 }
 
@@ -445,24 +481,34 @@ sd_min_alpha_gini <- function(l, u, n, mean, m, max_profiles = 5e5) {
 .alpha_gini_envelope <- function(l, u, n, m, max_profiles = 5e5) {
   key <- paste(l, u, n, signif(m, 12), max_profiles, sep = "|")
   hit <- .gini_envelope_cache[[key]]
-  if (!is.null(hit)) return(if (identical(hit, NA)) NULL else hit)
-  W <- as.integer(round(u - l))                        # composite spread
-  if (W < 1L || !is.finite(suppressWarnings(choose(n + W, W))) ||
-      choose(n + W, W) > max_profiles) {
+  if (!is.null(hit)) {
+    return(if (identical(hit, NA)) NULL else hit)
+  }
+  W <- as.integer(round(u - l)) # composite spread
+  if (
+    W < 1L ||
+      !is.finite(suppressWarnings(choose(n + W, W))) ||
+      choose(n + W, W) > max_profiles
+  ) {
     assign(key, NA, envir = .gini_envelope_cache)
     return(NULL)
   }
-  vals <- 0:W                                          # deviations above l
+  vals <- 0:W # deviations above l
   cv <- .count_vectors(W + 1L, n)
   tot <- as.vector(cv %*% vals)
-  SS <- as.vector(cv %*% (vals^2)) - tot^2 / n         # SS_S (shift-invariant)
+  SS <- as.vector(cv %*% (vals^2)) - tot^2 / n # SS_S (shift-invariant)
   # Gini double-sum over unordered value pairs: sum_{a<b} c_a c_b (v_b - v_a)
   G2 <- numeric(nrow(cv))
-  for (a in seq_len(W)) for (b in (a + 1L):(W + 1L))
-    G2 <- G2 + cv[, a] * cv[, b] * (vals[b] - vals[a])
-  mmax <- ifelse(G2 > 0, n * SS / G2, 0)               # m_max(S) = n SS / (n V_min)
-  ok <- mmax >= m - 1e-9 & SS > 1e-12                  # non-constant, supports alpha
-  res <- if (!any(ok)) list(target = integer(0), ss = numeric(0)) else {
+  for (a in seq_len(W)) {
+    for (b in (a + 1L):(W + 1L)) {
+      G2 <- G2 + cv[, a] * cv[, b] * (vals[b] - vals[a])
+    }
+  }
+  mmax <- ifelse(G2 > 0, n * SS / G2, 0) # m_max(S) = n SS / (n V_min)
+  ok <- mmax >= m - 1e-9 & SS > 1e-12 # non-constant, supports alpha
+  res <- if (!any(ok)) {
+    list(target = integer(0), ss = numeric(0))
+  } else {
     agg <- tapply(SS[ok], tot[ok], min)
     list(target = as.integer(names(agg)), ss = as.numeric(agg))
   }
@@ -503,11 +549,14 @@ sd_min_alpha_gini <- function(l, u, n, mean, m, max_profiles = 5e5) {
 sd_bounds_alpha <- function(l, u, n, mean, Z, alpha, k_items) {
   k <- k_items
   cc <- (k - 1) / k
-  D <- 1 - cc * alpha                      # k - (k-1) alpha = k * D
-  if (D <= 1e-12) stop("alpha too high for this k: 1 - alpha*(k-1)/k must be positive")
+  D <- 1 - cc * alpha # k - (k-1) alpha = k * D
+  if (D <= 1e-12) {
+    stop("alpha too high for this k: 1 - alpha*(k-1)/k must be positive")
+  }
 
-  ceil_free <- sd_max_structure_s(mean, n, l, u)          # alpha-free sharp ceiling
-  ceil_smooth <- bessel_factor(n) * sqrt(pmax(0, (u - mean) * (mean - l)) / (k * D))
+  ceil_free <- sd_max_structure_s(mean, n, l, u) # alpha-free sharp ceiling
+  ceil_smooth <- bessel_factor(n) *
+    sqrt(pmax(0, (u - mean) * (mean - l)) / (k * D))
   ceiling <- min(ceil_free, ceil_smooth)
   floor_ <- 0
   floor_rule <- "s >= 0"
@@ -515,9 +564,11 @@ sd_bounds_alpha <- function(l, u, n, mean, Z, alpha, k_items) {
   if (Z %in% c("integer", "quasiinteger")) {
     item_l <- l / k
     item_u <- u / k
-    ceil_vmax <- sqrt((n / (n - 1)) * v_max_alpha(mean, k, n, item_l, item_u) / D)
+    ceil_vmax <- sqrt(
+      (n / (n - 1)) * v_max_alpha(mean, k, n, item_l, item_u) / D
+    )
     ceiling <- min(ceiling, ceil_vmax)
-    floor_ <- sd_min_quasi_integer(mean, n) / sqrt(D)     # proven amplified floor
+    floor_ <- sd_min_quasi_integer(mean, n) / sqrt(D) # proven amplified floor
     floor_rule <- "alpha-amplified quasi-integer floor"
     # sharpen with the exact Gini envelope for strictly integer composites; it
     # is >= the amplified floor and strictly positive at whole-number means.
@@ -531,9 +582,13 @@ sd_bounds_alpha <- function(l, u, n, mean, Z, alpha, k_items) {
       }
     }
   }
-  list(min_sd = floor_, max_sd = ceiling,
-       feasible = floor_ <= ceiling + 1e-9,
-       min_rule = floor_rule, note = note)
+  list(
+    min_sd = floor_,
+    max_sd = ceiling,
+    feasible = floor_ <= ceiling + 1e-9,
+    min_rule = floor_rule,
+    note = note
+  )
 }
 
 # ---- Layer 3: rounding / truncation of reported inputs -----------------------
@@ -557,7 +612,9 @@ sd_bounds_alpha <- function(l, u, n, mean, Z, alpha, k_items) {
 #' @export
 infer_digits <- function(x) {
   s <- if (is.character(x)) x else as.character(x)
-  if (!grepl("\\.", s)) return(0L)
+  if (!grepl("\\.", s)) {
+    return(0L)
+  }
   nchar(sub("^-?[0-9]*\\.", "", s))
 }
 
@@ -603,31 +660,51 @@ infer_digits <- function(x) {
 #' # digits are inferred from a string, so trailing zeros are honoured
 #' unround_interval("2.90")
 #' @export
-unround_interval <- function(x, digits = NULL,
-                             rounding = c("up_or_down", "up", "down", "even",
-                                          "ceiling", "floor", "trunc", "anti_trunc")) {
+unround_interval <- function(
+  x,
+  digits = NULL,
+  rounding = c(
+    "up_or_down",
+    "up",
+    "down",
+    "even",
+    "ceiling",
+    "floor",
+    "trunc",
+    "anti_trunc"
+  )
+) {
   rounding <- match.arg(rounding)
   if (is.null(digits)) {
-    if (!is.character(x))
-      stop("digits must be supplied for numeric x (trailing zeros are not recoverable); ",
-           "or pass the reported value as a string for inference via infer_digits()")
+    if (!is.character(x)) {
+      stop(
+        "digits must be supplied for numeric x (trailing zeros are not recoverable); ",
+        "or pass the reported value as a string for inference via infer_digits()"
+      )
+    }
     digits <- infer_digits(x)
   }
   xv <- as.numeric(x)
   unit <- 10^(-digits)
   h <- unit / 2
-  res <- switch(rounding,
-    up_or_down = list(lo = xv - h,    hi = xv + h,    lo_incl = TRUE,  hi_incl = TRUE),
-    up         = list(lo = xv - h,    hi = xv + h,    lo_incl = TRUE,  hi_incl = FALSE),
-    down       = list(lo = xv - h,    hi = xv + h,    lo_incl = FALSE, hi_incl = TRUE),
-    even       = list(lo = xv - h,    hi = xv + h,    lo_incl = TRUE,  hi_incl = TRUE),
-    ceiling    = list(lo = xv - unit, hi = xv,        lo_incl = FALSE, hi_incl = TRUE),
-    floor      = list(lo = xv,        hi = xv + unit, lo_incl = TRUE,  hi_incl = FALSE),
-    trunc      = if (xv >= 0) list(lo = xv,        hi = xv + unit, lo_incl = TRUE,  hi_incl = FALSE)
-                 else         list(lo = xv - unit, hi = xv,        lo_incl = FALSE, hi_incl = TRUE),
-    anti_trunc = if (xv >= 0) list(lo = xv - unit, hi = xv,        lo_incl = FALSE, hi_incl = TRUE)
-                 else         list(lo = xv,        hi = xv + unit, lo_incl = TRUE,  hi_incl = FALSE)
+  res <- switch(
+    rounding,
+    up_or_down = list(lo = xv - h, hi = xv + h, lo_incl = TRUE, hi_incl = TRUE),
+    up = list(lo = xv - h, hi = xv + h, lo_incl = TRUE, hi_incl = FALSE),
+    down = list(lo = xv - h, hi = xv + h, lo_incl = FALSE, hi_incl = TRUE),
+    even = list(lo = xv - h, hi = xv + h, lo_incl = TRUE, hi_incl = TRUE),
+    ceiling = list(lo = xv - unit, hi = xv, lo_incl = FALSE, hi_incl = TRUE),
+    floor = list(lo = xv, hi = xv + unit, lo_incl = TRUE, hi_incl = FALSE),
+    trunc = if (xv >= 0) {
+      list(lo = xv, hi = xv + unit, lo_incl = TRUE, hi_incl = FALSE)
+    } else {
+      list(lo = xv - unit, hi = xv, lo_incl = FALSE, hi_incl = TRUE)
+    },
+    anti_trunc = if (xv >= 0) {
+      list(lo = xv - unit, hi = xv, lo_incl = FALSE, hi_incl = TRUE)
+    } else {
+      list(lo = xv, hi = xv + unit, lo_incl = TRUE, hi_incl = FALSE)
+    }
   )
   c(res, list(digits = digits))
 }
-

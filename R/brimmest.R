@@ -124,26 +124,55 @@
 #' brimmest(l = 1, u = 5, n = 9, digits = 1,
 #'         mean = c(3.0, 1.3, 2.5), sd = c(1.0, 0.9, 1.2))
 #' @export
-brimmest <- function(l, u, n, mean, sd, digits = NULL,
-                    mean_digits = NULL, sd_digits = NULL,
-                    rounding = c("half_up", "half_down"),
-                    scoring = c("singleitem", "sumscored", "meanscored"),
-                    n_items = 1, max_cells = 2e7, search_budget = 2e5) {
+brimmest <- function(
+  l,
+  u,
+  n,
+  mean,
+  sd,
+  digits = NULL,
+  mean_digits = NULL,
+  sd_digits = NULL,
+  rounding = c("half_up", "half_down"),
+  scoring = c("singleitem", "sumscored", "meanscored"),
+  n_items = 1,
+  max_cells = 2e7,
+  search_budget = 2e5
+) {
   scoring <- match.arg(scoring)
-  valid <- c("half_up", "half_down", "native", "ceiling", "floor",
-             "trunc", "anti_trunc")
+  valid <- c(
+    "half_up",
+    "half_down",
+    "native",
+    "ceiling",
+    "floor",
+    "trunc",
+    "anti_trunc"
+  )
   bad <- setdiff(rounding, valid)
-  if (length(bad))
-    stop("unknown rounding rule(s): ", paste(bad, collapse = ", "),
-         ". Choose from: ", paste(valid, collapse = ", "))
-  if (!length(rounding)) stop("at least one rounding rule is required")
+  if (length(bad)) {
+    stop(
+      "unknown rounding rule(s): ",
+      paste(bad, collapse = ", "),
+      ". Choose from: ",
+      paste(valid, collapse = ", ")
+    )
+  }
+  if (!length(rounding)) {
+    stop("at least one rounding rule is required")
+  }
 
   md <- if (!is.null(mean_digits)) mean_digits else digits
   sdd <- if (!is.null(sd_digits)) sd_digits else digits
-  if (is.null(md) || is.null(sdd))
-    stop("reported decimal places are required: give digits, or both ",
-         "mean_digits and sd_digits")
-  if (is.null(n) || n < 2) stop("n must be >= 2 for a sample SD")
+  if (is.null(md) || is.null(sdd)) {
+    stop(
+      "reported decimal places are required: give digits, or both ",
+      "mean_digits and sd_digits"
+    )
+  }
+  if (is.null(n) || n < 2) {
+    stop("n must be >= 2 for a sample SD")
+  }
 
   k <- as.integer(round(n_items))
   g <- .scoring_geometry(scoring, k, l, u)
@@ -173,22 +202,34 @@ brimmest <- function(l, u, n, mean, sd, digits = NULL,
     (cells > 1e6 && nn * length(rounding) <= 64)
 
   if (use_target) {
-    hit_mat <- vapply(rounding, function(rr) {
-      vapply(seq_len(nn), function(i) {
-        tg <- .target_states(l, u, n, g$mg, mean[i], sd[i], md, sdd, rr)
-        # Arithmetic and a pruned constructive search first (see
-        # R/certify-sandwich.R); the corridor sweep only for what they leave
-        # undecided. Both give the same verdict, so the order is purely a
-        # matter of cost.
-        got <- .certify_fast(W, n, tg, budget = search_budget)
-        if (is.na(got)) got <- .attainable_target(W, n, tg,
-                                                  max_cells = max_cells)
-        if (is.na(got)) stop(
-          "this design is too large to certify at the requested precision; ",
-          "raise max_cells, or report to fewer decimal places")
-        got
-      }, logical(1))
-    }, logical(nn))
+    hit_mat <- vapply(
+      rounding,
+      function(rr) {
+        vapply(
+          seq_len(nn),
+          function(i) {
+            tg <- .target_states(l, u, n, g$mg, mean[i], sd[i], md, sdd, rr)
+            # Arithmetic and a pruned constructive search first (see
+            # R/certify-sandwich.R); the corridor sweep only for what they leave
+            # undecided. Both give the same verdict, so the order is purely a
+            # matter of cost.
+            got <- .certify_fast(W, n, tg, budget = search_budget)
+            if (is.na(got)) {
+              got <- .attainable_target(W, n, tg, max_cells = max_cells)
+            }
+            if (is.na(got)) {
+              stop(
+                "this design is too large to certify at the requested precision; ",
+                "raise max_cells, or report to fewer decimal places"
+              )
+            }
+            got
+          },
+          logical(1)
+        )
+      },
+      logical(nn)
+    )
   } else {
     # one lattice per design, reused across every reported tuple and cached so
     # that repeated calls on the same design pay for it once
@@ -202,19 +243,27 @@ brimmest <- function(l, u, n, mean, sd, digits = NULL,
     mult_s <- 10^sdd
     qm <- round(mean * mult_m)
     qs <- round(sd * mult_s)
-    hit_mat <- vapply(rounding, function(rr) {
-      lm <- round(.round_reported(lat$mean, md, rr) * mult_m)
-      ls <- round(.round_reported(lat$sd, sdd, rr) * mult_s)
-      span <- max(c(ls, qs), 0) + 1            # same packing for both sides
-      (qm * span + qs) %in% (lm * span + ls)
-    }, logical(nn))
+    hit_mat <- vapply(
+      rounding,
+      function(rr) {
+        lm <- round(.round_reported(lat$mean, md, rr) * mult_m)
+        ls <- round(.round_reported(lat$sd, sdd, rr) * mult_s)
+        span <- max(c(ls, qs), 0) + 1 # same packing for both sides
+        (qm * span + qs) %in% (lm * span + ls)
+      },
+      logical(nn)
+    )
   }
   dim(hit_mat) <- c(nn, length(rounding))
 
   rules <- apply(hit_mat, 1L, function(z) paste(rounding[z], collapse = ","))
-  data.frame(mean = mean, sd = sd,
-             possible = as.logical(rowSums(hit_mat) > 0),
-             rules = rules, stringsAsFactors = FALSE)
+  data.frame(
+    mean = mean,
+    sd = sd,
+    possible = as.logical(rowSums(hit_mat) > 0),
+    rules = rules,
+    stringsAsFactors = FALSE
+  )
 }
 
 # ---- Batch certification -----------------------------------------------------
@@ -270,38 +319,68 @@ brimmest <- function(l, u, n, mean, sd, digits = NULL,
 #'                   include_inputs = FALSE)
 #' @export
 brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
-  if (!is.data.frame(data)) stop("data must be a data frame")
-  row_args <- c("l", "u", "n", "mean", "sd", "digits",
-                "mean_digits", "sd_digits", "scoring", "n_items")
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame")
+  }
+  row_args <- c(
+    "l",
+    "u",
+    "n",
+    "mean",
+    "sd",
+    "digits",
+    "mean_digits",
+    "sd_digits",
+    "scoring",
+    "n_items"
+  )
   call_args <- c("rounding", "max_cells", "search_budget")
   consts <- list(...)
   unknown <- setdiff(names(consts), c(row_args, call_args))
-  if (length(unknown))
+  if (length(unknown)) {
     stop("unknown constant argument(s): ", paste(unknown, collapse = ", "))
+  }
   clash <- intersect(call_args, names(data))
-  if (length(clash))
-    stop(paste(clash, collapse = ", "), " applies to the whole call, not to ",
-         "one row; supply it as a constant rather than a column")
+  if (length(clash)) {
+    stop(
+      paste(clash, collapse = ", "),
+      " applies to the whole call, not to ",
+      "one row; supply it as a constant rather than a column"
+    )
+  }
 
   N <- nrow(data)
-  if (!N) stop("data has no rows")
+  if (!N) {
+    stop("data has no rows")
+  }
   resolve <- function(nm) {
     incol <- nm %in% names(data)
     incon <- nm %in% names(consts) && !is.null(consts[[nm]])
-    if (incol && incon)
+    if (incol && incon) {
       stop(sprintf("'%s' supplied as both a column and a constant", nm))
-    if (incol) data[[nm]]
-    else if (incon) rep(consts[[nm]], length.out = N)
-    else NULL
+    }
+    if (incol) {
+      data[[nm]]
+    } else if (incon) {
+      rep(consts[[nm]], length.out = N)
+    } else {
+      NULL
+    }
   }
-  cols <- lapply(row_args, resolve); names(cols) <- row_args
+  cols <- lapply(row_args, resolve)
+  names(cols) <- row_args
   present <- row_args[!vapply(cols, is.null, logical(1))]
-  for (nm in c("l", "u", "n", "mean", "sd"))
-    if (!(nm %in% present))
+  for (nm in c("l", "u", "n", "mean", "sd")) {
+    if (!(nm %in% present)) {
       stop(sprintf("'%s' is required (as a column of data or a constant)", nm))
-  if (!any(c("digits", "mean_digits", "sd_digits") %in% present))
-    stop("reported decimal places are required: give digits, or both ",
-         "mean_digits and sd_digits")
+    }
+  }
+  if (!any(c("digits", "mean_digits", "sd_digits") %in% present)) {
+    stop(
+      "reported decimal places are required: give digits, or both ",
+      "mean_digits and sd_digits"
+    )
+  }
 
   passthru <- consts[intersect(call_args, names(consts))]
 
@@ -321,8 +400,11 @@ brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
     names(args) <- design
     mu <- cols$mean[ix]
     sg <- cols$sd[ix]
-    tk <- paste(format(mu, nsmall = 6, trim = TRUE),
-                format(sg, nsmall = 6, trim = TRUE), sep = "\r")
+    tk <- paste(
+      format(mu, nsmall = 6, trim = TRUE),
+      format(sg, nsmall = 6, trim = TRUE),
+      sep = "\r"
+    )
     uk <- !duplicated(tk)
     r <- do.call(brimmest, c(args, list(mean = mu[uk], sd = sg[uk]), passthru))
     back <- match(tk, tk[uk])
@@ -330,7 +412,10 @@ brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
     rules[ix] <- r$rules[back]
   }
 
-  res <- data.frame(possible = possible, rules = rules,
-                    stringsAsFactors = FALSE)
+  res <- data.frame(
+    possible = possible,
+    rules = rules,
+    stringsAsFactors = FALSE
+  )
   if (include_inputs) cbind(data, res) else res
 }

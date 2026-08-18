@@ -29,14 +29,25 @@
 #' c(mean = mean(x), sd = sd(x))          # 2.9667 and the max-SD bound
 #' table(sd_bounds_sample(l = 1, u = 7, n = 30, mean = 89/30, which = "max"))
 #' @export
-sd_bounds_sample <- function(l, u, n, mean, which = c("max", "min"),
-                             Z = c("quasiinteger", "integer")) {
+sd_bounds_sample <- function(
+  l,
+  u,
+  n,
+  mean,
+  which = c("max", "min"),
+  Z = c("quasiinteger", "integer")
+) {
   which <- match.arg(which)
   Z <- match.arg(Z)
-  if (is.null(n) || n < 2) stop("n must be >= 2")
-  if (mean < l - 1e-9 || mean > u + 1e-9) stop("mean must lie in [l, u]")
-  if (Z == "integer" && abs(n * mean - round(n * mean)) > 1e-9)
+  if (is.null(n) || n < 2) {
+    stop("n must be >= 2")
+  }
+  if (mean < l - 1e-9 || mean > u + 1e-9) {
+    stop("mean must lie in [l, u]")
+  }
+  if (Z == "integer" && abs(n * mean - round(n * mean)) > 1e-9) {
     stop("Z = 'integer' requires a GRIM-consistent mean (n * mean an integer)")
+  }
 
   if (which == "max") {
     R <- u - l
@@ -46,9 +57,9 @@ sd_bounds_sample <- function(l, u, n, mean, which = c("max", "min"),
     n_l <- n - n_u - 1
     c(rep(l, n_l), x_r, rep(u, n_u))
   } else {
-    v    <- floor(mean)
-    n_hi <- pmin(floor(n * (mean - v) + 1e-9), n - 1)      # observations at v + 1
-    x_r  <- n * mean - n_hi * (v + 1) - (n - n_hi - 1) * v  # the free remainder
+    v <- floor(mean)
+    n_hi <- pmin(floor(n * (mean - v) + 1e-9), n - 1) # observations at v + 1
+    x_r <- n * mean - n_hi * (v + 1) - (n - n_hi - 1) * v # the free remainder
     c(rep(v, n - n_hi - 1), x_r, rep(v + 1, n_hi))
   }
 }
