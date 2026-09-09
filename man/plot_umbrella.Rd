@@ -39,16 +39,12 @@ size that reads well for a few hundred is a solid mass at twenty thousand.}
 \code{style = "contour"}.}
 
 \item{contour_by}{Passed to \code{\link[=umbrella_contour]{umbrella_contour()}} as \code{by}: the mean spacing
-that \code{style = "contour"} uses to tell a genuine gap in the umbrella from
-its ordinary striping (see Details). Defaults to the median spacing between
-the means that have a consistent tuple; give it explicitly to keep a narrow
-gap — a stretch near a scale limit that a reported alpha rules out, say —
-from being bridged.}
+that tells a genuine gap in the umbrella from its ordinary striping. Give
+it explicitly to keep a narrow gap from being bridged.}
 
 \item{shade}{\code{"outside"} (default) greys everything the design rules out;
 \code{"none"} draws no shading at all, and leaves the contour unfilled. Applies
-to \code{"points"} and \code{"contour"}; \code{"tiles"} colours every cell already, so
-there is nothing left to shade.}
+to \code{"points"} and \code{"contour"}; \code{"tiles"} colours every cell already.}
 
 \item{expand}{Padding as a proportion of the scale width, as in
 \code{\link[=plot_sd_bounds]{plot_sd_bounds()}}.}
@@ -65,59 +61,39 @@ styles. Optionally overlays the bound curves from \code{\link[=sd_bounds_curve]{
 consistent tuples. Nothing else is drawn, because nothing else exists: every
 other cell of the grid is a value that cannot be reported. This matches the
 convention of \code{\link[=plot_sd_bounds]{plot_sd_bounds()}} and \code{\link[=plot_sd_region]{plot_sd_region()}}, where shading marks
-what is ruled out, and it makes the real structure legible — the vertical
-striping at means an integer sum can round to.
+what is ruled out, and it makes the vertical striping legible.
 
 \code{style = "tiles"} draws every cell of the reporting grid, coloured as
-consistent, GRIMMER-inconsistent, or out of bounds. That is useful for
-methods exposition, since it separates what the bounds rule out from what
-GRIMMER additionally rules out, but it inverts the emphasis: at
-\code{n = 14} on a 1-7 scale at two decimal places it spends two thirds of its ink, in the most
-saturated colour, on impossible tuples, and GRIMMER's verdict alternating
-between adjacent SDs produces interference banding that obscures the striping.
+consistent, GRIMMER-inconsistent, or out of bounds. Useful for methods
+exposition, since it separates what the bounds rule out from what GRIMMER
+additionally rules out, but it spends most of its ink on impossible tuples.
 
-\code{style = "contour"} draws only the outline of the umbrella: the panel is
-shaded, the region between the lowest and highest consistent SD at each mean
-is knocked out of the shading, and that region is stroked. It is the look of
-\code{\link[=plot_sd_bounds]{plot_sd_bounds()}} — and of the app in \verb{app/default app/} — but taken from
-the lattice itself rather than from the continuous bounds, so what it outlines
-is what the tests actually admit. Use it when the point cloud is too dense to
-read, when the figure is a backdrop for reported points, or to see the
-discrete envelope against the continuous one by passing \code{curve} as well.
-
-The outline itself comes from \code{\link[=umbrella_contour]{umbrella_contour()}}, which is exported, so
-the rings can also be had as data. Being an envelope, it is drawn across the
-vertical striping rather than around it, and its interior therefore claims
-less than the points do: see that function for what \code{contour_by} controls
-and what the region does and does not assert.
+\code{style = "contour"} draws only the outline of the umbrella, from
+\code{\link[=umbrella_contour]{umbrella_contour()}}. Use it when the point cloud is too dense to read, when
+the figure is a backdrop for reported points, or to see the discrete
+envelope against the continuous one by passing \code{curve} as well. Being an
+envelope, it is drawn across the vertical striping rather than around it, so
+its interior claims less than the points do.
 
 The grey under \code{"points"} and \code{"contour"} is a layer, not a theme element:
 it is a rectangle over the whole panel with the feasible region knocked out
-of it, so it says "no tuple here" as data rather than as decoration. That is
-why no theme call removes it — \code{theme_void()} strips the axes and panel and
-the shading stays, as it must, since the statement it makes survives the
-loss of the axes. Use \code{shade = "none"} to drop it, which also leaves the
-contour unfilled, so the plot can sit over something else.
+of it, so it says "no tuple here" as data rather than as decoration. No
+theme call removes it — \code{theme_void()} strips the axes and the shading
+stays, as it must. Use \code{shade = "none"} to drop it.
 
-Note what the points represent. The consistent set is the GRIM- and
-GRIMMER-consistent one, which is what \code{\link[=brimmer]{brimmer()}} applies. It is strictly
-larger than the set of attainable tuples, so an umbrella plot shows what the
-test admits rather than what exists; use \code{\link[=brimmest]{brimmest()}} to certify a tuple.
-The gap is not always small — 9\\% at \verb{l = 1, u = 5, n = 10}, and nearly a
-factor of three at \verb{l = 0, u = 6, n = 23} with two items.
+Note what the points represent: the GRIM- and GRIMMER-consistent set, which
+is what \code{\link[=brimmer]{brimmer()}} applies. It is strictly larger than the set of
+attainable tuples, so an umbrella plot shows what the test admits rather
+than what exists; use \code{\link[=brimmest]{brimmest()}} to certify a tuple.
 }
 \examples{
-grid <- umbrella_data(n = 12, l = 1, u = 7, digits = 2)
+grid <- umbrella_data(n = 12, l = 1, u = 3, digits = 2)
 plot_umbrella(grid, title = "n = 12, 1-3 scale")
 
-# The previous look, separating the two ways a tuple can be ruled out
+# separating the two ways a tuple can be ruled out
 plot_umbrella(grid, style = "tiles")
 
-# Just the outline of the region, as the Shiny app draws it, with the
-# continuous bounds dashed over it for comparison
+# just the outline, with the continuous bounds dashed over it
 curve <- sd_bounds_curve(l = 1, u = 3, n = 12, by = 0.05)
 plot_umbrella(grid, curve = curve, style = "contour")
-
-# The outline alone, on whatever background the theme gives it
-plot_umbrella(grid, style = "contour", shade = "none") + ggplot2::theme_void()
 }

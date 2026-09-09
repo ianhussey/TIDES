@@ -11,9 +11,9 @@ brim(
   b = NULL,
   n = NULL,
   mean = NULL,
-  mean_digits = NULL,
+  digits_mean = NULL,
   rounding = "up_or_down",
-  Z = c("continuous", "integer", "quasiinteger"),
+  granularity = c("continuous", "integer", "quasiinteger"),
   scoring = c("singleitem", "sumscored", "meanscored"),
   n_items = 1
 )
@@ -25,25 +25,24 @@ brim(
 
 \item{n}{Integer scalar, sample size.}
 
-\item{mean}{Numeric scalar or NULL, the reported mean.}
+\item{mean}{Numeric scalar or NULL, the reported sample mean.}
 
-\item{mean_digits}{Integer scalar or NULL, its reported decimal places
-(required when \code{mean} and \code{rounding} are both given).}
+\item{digits_mean}{Integer scalar or NULL, decimal places of the reported
+mean (required with \code{rounding}).}
 
-\item{rounding}{Rounding rule for unrounding the reported values
-(default \code{"up_or_down"}); NULL treats inputs as exact. See
-\code{\link[=unround_interval]{unround_interval()}}.}
+\item{rounding}{Rounding rule for unrounding the reported values (default
+\code{"up_or_down"}); NULL treats inputs as exact. See \code{\link[=unround_interval]{unround_interval()}}.}
 
-\item{Z}{"continuous" (default), "integer", or "quasiinteger".}
+\item{granularity}{"continuous" (default), "integer", or "quasiinteger".}
 
 \item{scoring}{"singleitem" (default), "sumscored", or "meanscored".}
 
 \item{n_items}{Positive whole number of response items (default 1).}
 }
 \value{
-A one-row data.frame: \code{consistent} (logical), \code{failed_tests}
-(comma-separated, "" if none), \code{in_scale_range}, \code{grim}, the feasible mean
-band \code{band_lo} and \code{band_hi}, \code{pomp_mean}, and \code{note}.
+A one-row tibble: \code{consistent}, \code{failed_tests}, \code{in_scale_range},
+\code{grim}, the feasible mean band \code{band_lo} and \code{band_hi}, \code{pomp_mean}, and
+\code{note}.
 }
 \description{
 Bounds-Related Inconsistency of Means. The mean-side test: is the reported
@@ -55,26 +54,21 @@ applies to continuous data too, and one that tightens sharply once an
 observed minimum or maximum is reported.
 }
 \details{
-A thin wrapper on \code{\link[=brimmer]{brimmer()}} with no reported SD, so only the mean-side
-tests apply: \code{in_scale_range} (the reported mean's rounding interval must
-meet the feasible mean band, see \code{\link[=feasible_mean_band]{feasible_mean_band()}}) and, under
-\code{Z = "integer"} with \code{rounding}, scrutiny's \code{grim} verdict. GRIMMER is never
-invoked, and the SD-side columns are omitted rather than returned as \code{NA}.
-
-The two tests are independent and name different defects: a mean can be out
-of range but granular-attainable (7.50 on a 1-7 scale at \code{n = 30}), inside
-the range but GRIM-impossible (3.51 at \code{n = 30}), or both (7.51).
+A thin wrapper on \code{\link[=brimmer]{brimmer()}} with no reported SD, so only \code{in_scale_range}
+and (under \code{granularity = "integer"} with \code{rounding}) scrutiny's \code{grim}
+verdict apply. The two name different defects: a mean can be out of range
+but granular-attainable (7.50 on a 1-7 scale at \code{n = 30}), inside the range
+but GRIM-impossible (3.51 at \code{n = 30}), or both (7.51).
 }
 \examples{
-# an ordinary mean on a 1-7 scale
-brim(l = 1, u = 7, n = 30, mean = 2.97, mean_digits = 2)
+brim(l = 1, u = 7, n = 30, mean = 2.97, digits_mean = 2)
 
 # a mean above the scale maximum cannot be attained
-brim(l = 1, u = 7, n = 30, mean = 7.5, mean_digits = 1)
+brim(l = 1, u = 7, n = 30, mean = 7.5, digits_mean = 1)
 
 # attained extremes narrow the band, and can exclude a mean the bare
 # scale limits would allow
-brim(a = 1, b = 7, n = 30, mean = 1.10, mean_digits = 2)
+brim(a = 1, b = 7, n = 30, mean = 1.10, digits_mean = 2)
 }
 \seealso{
 \code{\link[=brimmer]{brimmer()}} for the SD-side test, \code{\link[=brimmest]{brimmest()}} for the exact

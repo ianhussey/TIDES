@@ -4,18 +4,20 @@
 \alias{sd_min_alpha_gini}
 \title{Sharp alpha-conditional composite floor via the Gini mean difference}
 \usage{
-sd_min_alpha_gini(l, u, n, mean, m, max_profiles = 5e+05)
+sd_min_alpha_gini(l, u, n, mean, m, max_profiles = MAX_GINI_PROFILES)
 }
 \arguments{
 \item{l, u}{Integer scalars, sum-score limits.}
 
 \item{n}{Integer scalar, sample size.}
 
-\item{mean}{Numeric scalar, sum-score mean (with \eqn{n \cdot mean} an integer).}
+\item{mean}{Numeric scalar, sum-score mean (with \eqn{n \cdot mean} an
+integer).}
 
-\item{m}{Numeric scalar, the reported design factor \eqn{1/(1 - c\alpha)}, \eqn{\ge 1}.}
+\item{m}{Numeric scalar, the reported design factor
+\eqn{1/(1 - c\alpha)}, \eqn{\ge 1}.}
 
-\item{max_profiles}{Numeric, enumeration budget (default 5e5).}
+\item{max_profiles}{Numeric, enumeration budget.}
 }
 \value{
 Numeric scalar, the exact floor in sum-score SD units, or \code{NULL}.
@@ -25,16 +27,12 @@ The exact alpha-conditional minimum SD for a \emph{strictly integer} composite
 (STRAIT article, Theorem H5 and Corollaries H5a-H5b): the least sample SD
 among integer sum-score profiles \eqn{S} with the given mean, integer values
 in \eqn{[l, u]}, whose design-factor cap
-\eqn{m_{\max}(S) = 2 n\, SS_S / \sum_{s,t}|S_s - S_t|} is at least the reported
-design factor \eqn{m = 1/(1 - c\alpha)}. By inequality (\eqn{\star}) of the
-article, every integer item set achieving the reported alpha has such a
-profile, so this is a valid lower bound on the composite SD, and it is the
-\emph{sharp} one when the full logical composite window (spread \eqn{u - l}) is
-enumerated. Unlike the amplified floor it is strictly positive whenever
-\eqn{m > 1}, including at whole-number sum-score means (Corollary H5b).
+\eqn{m_{\max}(S) = 2 n\, SS_S / \sum_{s,t}|S_s - S_t|} is at least the
+reported design factor \eqn{m = 1/(1 - c\alpha)}. Unlike the amplified floor
+it is strictly positive whenever \eqn{m > 1}, including at whole-number
+sum-score means (Corollary H5b).
 }
 \details{
-Enumeration spans the full composite range, so the returned floor is exact.
 Returns \code{NULL} (caller falls back to the proven amplified floor) when no
 integer composite exists (\eqn{n \cdot mean} not an integer) or the
 enumeration \code{choose(n + W, W)}, \eqn{W = u - l}, would exceed \code{max_profiles}.

@@ -1,4 +1,6 @@
-l <- 1; u <- 5; n <- 7
+l <- 1
+u <- 5
+n <- 7
 m <- seq(l, u, by = 0.002)
 bes <- sqrt(n / (n - 1))
 
@@ -54,17 +56,18 @@ test_that("lattice rules return attainable tuples, and alpha is a strict subset"
   a  <- sd_region_data(l, u, n, rule = "integer", n_items = 2, digits = 2)
   b  <- sd_region_data(l, u, n, rule = "integer_alpha", n_items = 2,
                        alpha = 0.70, digits = 2)
-  expect_identical(attr(a, "type"), "points")
-  expect_named(a, c("mean", "sd"))
+  attr(a, "type") |> expect_identical("points")
+  expect_named(a, c("mean", "lo", "hi", "sd"))
   expect_gt(nrow(a), 0)
   expect_lt(nrow(b), nrow(a))                                   # alpha removes tuples
   expect_true(all(paste(b$mean, b$sd) %in% paste(a$mean, a$sd))) # strict subset
 
   # every retained tuple really is inside the alpha-conditional bounds
-  keep <- b[seq(1, nrow(b), length.out = min(40, nrow(b))), ]
+  # round(): a tibble refuses fractional row indices, unlike a data frame
+  keep <- b[round(seq(1, nrow(b), length.out = min(40, nrow(b)))), ]
   ok <- vapply(seq_len(nrow(keep)), function(i) {
-    r <- sd_bounds(l = l, u = u, n = n, mean = keep$mean[i], mean_digits = 2,
-                   rounding = "up_or_down", Z = "integer", scoring = "meanscored",
+    r <- sd_bounds(l = l, u = u, n = n, mean = keep$mean[i], digits_mean = 2,
+                   rounding = "up_or_down", granularity = "integer", scoring = "meanscored",
                    n_items = 2, alpha = 0.70)
     isTRUE(r$feasible) &&
       (keep$sd[i] + 0.005) >= r$min_sd - 1e-9 &&
@@ -76,11 +79,11 @@ test_that("lattice rules return attainable tuples, and alpha is a strict subset"
 test_that("every rule returns a ggplot", {
   for (r in c("range", "range_n", "mean", "mean_naive_floor", "mestdagh",
               "pesant_regin", "quasi")) {
-    expect_s3_class(plot_sd_region(l, u, n, rule = r), "ggplot")
+    plot_sd_region(l, u, n, rule = r) |> expect_s3_class("ggplot")
   }
   expect_s3_class(plot_sd_region(l, u, n, rule = "alpha", n_items = 2, alpha = 0.7),
                   "ggplot")
-  expect_s3_class(plot_sd_region(l, u, n, rule = "integer", digits = 1), "ggplot")
+  plot_sd_region(l, u, n, rule = "integer", digits = 1) |> expect_s3_class("ggplot")
   expect_s3_class(plot_sd_region(l, u, n, rule = "integer_alpha", n_items = 2,
                                  alpha = 0.7, digits = 1), "ggplot")
 })
@@ -99,7 +102,7 @@ test_that("the exact lattice matches brute-force enumeration", {
   for (cfg in list(c(4, 1, 5), c(5, 0, 3), c(3, 1, 7))) {
     n <- cfg[1]; l <- cfg[2]; u <- cfg[3]
     d <- sd_region_data(l, u, n, rule = "attainable")
-    a <- unique(round(as.matrix(d), 10))
+    a <- unique(round(as.matrix(d[, c("mean", "sd")]), 10))
     a <- a[order(a[, 1], a[, 2]), , drop = FALSE]
     expect_equal(unname(a), unname(brute(n, l, u)), tolerance = 1e-9)
   }
@@ -155,8 +158,8 @@ test_that("the batched Gini envelope agrees with per-mean evaluation", {
   m <- 1 / (1 - 0.5 * 0.5)
   # a cold cache and a warm one must agree, and both must be finite and
   # increasing in the profile constraint
-  rm(list = ls(envir = strait:::.gini_envelope_cache),
-     envir = strait:::.gini_envelope_cache)
+  rm(list = ls(envir = strait:::gini_envelope_cache),
+     envir = strait:::gini_envelope_cache)
   cold <- vapply(c(1, 1.5, 2, 2.5, 3), function(mu) {
     r <- sd_min_alpha_gini(0, 6, 23, mu, m); if (is.null(r)) NA_real_ else r
   }, 0)
@@ -172,24 +175,24 @@ test_that("the lattice DP's state-space reductions are sound", {
   # and raw storage must not alter a single tuple
   for (cfg in list(c(4, 1, 5), c(5, 0, 3), c(7, 0, 6), c(6, 0, 2))) {
     n <- cfg[1]; l <- cfg[2]; u <- cfg[3]
-    d <- strait:::.attainable_lattice(l, u, n, 1)
+    d <- strait:::attainable_lattice(l, u, n, 1)
     g <- as.matrix(expand.grid(rep(list(l:u), n)))
     b <- unique(round(cbind(rowMeans(g), apply(g, 1, stats::sd)), 10))
     b <- b[order(b[, 1], b[, 2]), , drop = FALSE]
-    a <- unique(round(as.matrix(d), 10))
+    a <- unique(round(as.matrix(d[, c("mean", "sd")]), 10))
     a <- a[order(a[, 1], a[, 2]), , drop = FALSE]
     expect_equal(unname(a), unname(b), tolerance = 1e-9)
   }
   # odd W packs the R axis by g = 2, even W does not; both must be exact
-  expect_equal(nrow(strait:::.attainable_lattice(0, 3, 7, 1)), 100L)
-  expect_equal(nrow(strait:::.attainable_lattice(0, 6, 23, 1)), 8634L)
+  nrow(strait:::attainable_lattice(0, 3, 7, 1)) |> expect_equal(100L)
+  nrow(strait:::attainable_lattice(0, 6, 23, 1)) |> expect_equal(8634L)
   # a mean-scored grid (mg > 1) still lands on the 1/mg lattice
-  d <- strait:::.attainable_lattice(0, 3, 6, 2)
+  d <- strait:::attainable_lattice(0, 3, 6, 2)
   expect_true(all(abs(d$mean * 6 * 2 - round(d$mean * 6 * 2)) < 1e-9))
   # the guard fires only when the REDUCED grid is oversized; the reductions
   # bring cases within reach that the naive (S, Q) grid could not hold
-  expect_error(strait:::.attainable_lattice(1, 7, 61, 5), "too large")
-  expect_silent(strait:::.attainable_lattice(0, 6, 300, 1))
+  expect_error(strait:::attainable_lattice(1, 7, 61, 5), "too large")
+  expect_silent(strait:::attainable_lattice(0, 6, 300, 1))
 })
 
 test_that("round_digits/rounding round the emitted lattice", {
@@ -231,7 +234,7 @@ test_that("forward-rounded exact tuples are a subset of the GRIMMER lattice", {
 test_that("umbrella_data's reporting grid is free of seq() drift", {
   # seq(0, 6, by = 0.1)[4] is 0.3 + 5.6e-17, and scrutiny reads the value as a
   # decimal, so an unrounded grid flips GRIMMER verdicts
-  um <- umbrella_data(n = 12, l = 0, u = 6, digits = 1, Z = "integer")
+  um <- umbrella_data(n = 12, l = 0, u = 6, digits = 1, granularity = "integer")
   expect_true(all(abs(um$mean * 10 - round(um$mean * 10)) < 1e-12))
   expect_true(all(abs(um$sd * 10 - round(um$sd * 10)) < 1e-12))
   expect_identical(sum(um$consistent), 1175L)   # 1167 before the fix

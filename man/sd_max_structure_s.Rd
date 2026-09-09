@@ -17,16 +17,14 @@ sd_max_structure_s(mean, n, lower, upper)
 Numeric vector, the maximum sample SD at each mean.
 }
 \description{
-The sharp maximum given limits, n, and the mean: \code{n_u} observations at the
-upper limit, \code{n_l} at the lower, at most one interior remainder (Mestdagh et
-al. 2018 "Structure S"). Equal to the count-parity (delta) corrected Muilwijk
-bound, so it is the sharp ceiling for continuous data too (endpoint counts
-must be whole numbers regardless of data continuity), and it is unchanged by
-attainment of the limits inside the feasible mean band. Under the
-quasi-integer constraint the remainder observation is the one free real.
+The sharp maximum given limits, n, and the mean: \code{n_upper} observations at
+the upper limit, \code{n_lower} at the lower, at most one interior remainder
+(Mestdagh et al. 2018 "Structure S"). Equal to the count-parity (delta)
+corrected Muilwijk bound, so it is the sharp ceiling for continuous data too,
+and it is unchanged by attainment of the limits inside the feasible mean
+band.
 }
 \examples{
-# the sharp mean-conditional ceiling across a 1-7 scale
 sd_max_structure_s(mean = c(2, 4, 6), n = 30, lower = 1, upper = 7)
 
 # a mean at a limit forces every observation there, so the SD is 0

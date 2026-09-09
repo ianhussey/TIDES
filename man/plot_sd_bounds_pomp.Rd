@@ -14,8 +14,8 @@ plot_sd_bounds_pomp(
 \arguments{
 \item{curve}{Output of \code{\link[=sd_bounds_curve]{sd_bounds_curve()}} (used for the parity band).}
 
-\item{points}{Optional data.frame with \code{pomp_mean} and \code{pomp_sd_parity} /
-\code{pomp_sd_sharp} and \code{consistent} (e.g. from \code{\link[=brimmer_multiple]{brimmer_multiple()}}).}
+\item{points}{Optional data frame with \code{pomp_mean} and \code{pomp_sd_parity} /
+\code{pomp_sd_sharp} and \code{consistent}, e.g. from \code{\link[=brimmer_map]{brimmer_map()}}.}
 
 \item{reference}{\code{"sharp"} (default) or \code{"parity"}.}
 
@@ -27,10 +27,11 @@ A ggplot object.
 \description{
 \code{reference = "parity"} normalises every SD by the mean-agnostic parity
 (Popoviciu) ceiling: a linear rescaling, so the Structure S ceiling appears
-as a dome under 1 and the umbrella geometry is undistorted. \code{reference = "sharp"} normalises each SD by its own sharp mean-conditional band, so the
-feasible region is exactly the unit square and a point's height is its
-position within the band (\code{pomp_sd_sharp}); regions outside \verb{[0, 1]^2} are
-shaded infeasible.
+as a dome under 1 and the umbrella geometry is undistorted.
+\code{reference = "sharp"} normalises each SD by its own sharp mean-conditional
+band, so the feasible region is exactly the unit square and a point's height
+is its position within the band (\code{pomp_sd_sharp}); regions outside
+\verb{[0, 1]^2} are shaded infeasible.
 }
 \examples{
 curve <- sd_bounds_curve(l = 1, u = 7, n = 30, by = 0.1)

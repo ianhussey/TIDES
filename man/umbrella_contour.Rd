@@ -16,8 +16,8 @@ defaults to the median spacing between the means that have a consistent
 tuple. Give it explicitly to keep a narrow true gap from being bridged.}
 }
 \value{
-A long-format data frame with \code{mean}, \code{y} and a \code{ring} id, as
-\code{\link[=band_polygon]{band_polygon()}} returns, or \code{NULL} if no tuple is consistent.
+A long-format tibble with \code{mean}, \code{y} and a \code{ring} id, as
+\code{\link[=band_polygon]{band_polygon()}} returns. Zero rows if no tuple is consistent.
 }
 \description{
 The envelope of a lattice of reportable \verb{(mean, sd)} tuples, as closed rings:
@@ -28,14 +28,16 @@ it is returned as data so the outline can be drawn elsewhere, or measured.
 \details{
 \code{by} is the spacing that tells a true gap in the umbrella from its ordinary
 striping, and it defaults to the median gap between the means that \emph{have} a
-consistent tuple rather than to the reporting grid's step. Under \code{Z = "integer"} only the means an integer sum can round to survive, so on the
-reporting grid almost every neighbouring pair of means is a gap; splitting
-there would make each stripe its own one-column ring, and a one-column ring
-has no width to draw. The median of the realised spacing is the striping's
-own period, so the stripes join into the envelope and only a true stretch of
-infeasible means — wider than \code{1.5 * by} — still splits the region.
+consistent tuple rather than to the reporting grid's step. Under
+\code{granularity = "integer"} only the means an integer sum can round to survive,
+so on the reporting grid almost every neighbouring pair of means is a gap;
+splitting there would make each stripe its own one-column ring, and a
+one-column ring has no width to draw. The median of the realised spacing is
+the striping's own period, so the stripes join into the envelope and only a
+true stretch of infeasible means still splits the region.
 
-The contour therefore claims less than the tuples do: it says which \verb{(mean, sd)} pairs are near the region the tests admit, not which ones are in it.
+The contour therefore claims less than the tuples do: it says which
+\verb{(mean, sd)} pairs are near the region the tests admit, not which are in it.
 }
 \examples{
 grid <- umbrella_data(n = 12, l = 1, u = 3, digits = 1)

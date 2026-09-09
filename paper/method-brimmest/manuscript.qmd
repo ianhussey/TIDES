@@ -56,7 +56,7 @@ passes GRIM, and passes GRIMMER. No sample of nine integers between 1 and 5
 produces it:
 
 ```{r}
-brimmest(l = 1, u = 5, n = 9, mean = 1.3, sd = 0.9, digits = 1)
+brimmest(l = 1, u = 5, n = 9, mean = 1.3, sd = 0.9, digits_mean = 1, digits_sd = 1)
 ```
 
 This paper introduces the test that settles such cases. BRIMMEST (Bounds-Related
@@ -121,8 +121,8 @@ screen-passers into the truly possible and the blind spot.
 #| fig-cap: 'The blind spot of the closed-form screens. Every reportable (mean, SD) cell for a 1--5 scale, n = 9, one decimal place. Grey cells fail at least one closed-form test (bounds, GRIM, or GRIMMER). Blue cells pass the screens and are certified possible. Red cells pass every closed-form screen and are certified impossible: no sample of nine integers on 1--5 rounds to them. The annotated cell is the example from the introduction.'
 #| fig-width: 7
 #| fig-height: 4.5
-um <- umbrella_data(n = 9, l = 1, u = 5, digits = 1, Z = "integer")
-cert <- brimmest(l = 1, u = 5, n = 9, mean = um$mean, sd = um$sd, digits = 1)
+um <- umbrella_data(n = 9, l = 1, u = 5, digits = 1, granularity = "integer")
+cert <- brimmest(l = 1, u = 5, n = 9, mean = um$mean, sd = um$sd, digits_mean = 1, digits_sd = 1)
 
 um$status <- ifelse(!um$consistent, "fails a screen",
              ifelse(cert$possible, "possible", "blind spot"))
@@ -442,7 +442,7 @@ entirely. The verdict is returned per report, together with the rounding rules
 under which it is reachable:
 
 ```{r}
-brimmest(l = 1, u = 5, n = 9, digits = 1,
+brimmest(l = 1, u = 5, n = 9, digits_mean = 1, digits_sd = 1,
          mean = c(3.0, 1.3, 2.5, 2.0),
          sd   = c(1.0, 0.9, 1.2, 1.1))
 ```
@@ -536,7 +536,7 @@ of narrowing is concrete:
 x <- c(rep(0, 9), 1, 1, 1)
 c(mean = mean(x), sd = sd(x))
 
-brimmest(l = 0, u = 6, n = 12, mean = 0.2, sd = 0.5, digits = 1)
+brimmest(l = 0, u = 6, n = 12, mean = 0.2, sd = 0.5, digits_mean = 1, digits_sd = 1)
 ```
 
 The exact mean is 0.25, which becomes "0.2" only when halves round down. A
@@ -600,12 +600,12 @@ design. Reports sharing scale limits, $n$, and precision share a lattice, and
 the function vectorises over the reports:
 
 ```{r}
-brimmest(l = 1, u = 5, n = 9, digits = 1,
+brimmest(l = 1, u = 5, n = 9, digits_mean = 1, digits_sd = 1,
          mean = c(3.0, 1.3, 2.5), sd = c(1.0, 0.9, 1.2))
 ```
 
-Precision can differ between the mean and SD (`mean_digits`, `sd_digits`),
-and `infer_digits()` recovers the reported precision from the printed strings
+Precision can differ between the mean and SD (`digits_mean`, `digits_sd`),
+and `scrutiny::decimal_places()` recovers the reported precision from the printed strings
 when trailing zeros make it ambiguous.
 
 Multi-item composites are supported through `scoring` and `n_items`. Sum

@@ -12,8 +12,8 @@ unround_interval(
 )
 }
 \arguments{
-\item{x}{Numeric scalar, the reported value (character accepted for
-digit inference only).}
+\item{x}{Numeric scalar, the reported value (character accepted for digit
+inference only).}
 
 \item{digits}{Integer, reported decimal places. Required when \code{x} is
 numeric.}
@@ -21,63 +21,40 @@ numeric.}
 \item{rounding}{One of the options above.}
 }
 \value{
-List: \code{lo}, \code{hi} (numeric), \code{lo_incl}, \code{hi_incl} (logical),
-\code{digits} (integer used).
+List: \code{lo}, \code{hi} (numeric), \code{lo_incl}, \code{hi_incl} (logical), \code{digits}
+(integer used).
 }
 \description{
 Given a reported value and the rounding procedure that produced it, returns
-the interval of exact values consistent with the report, in the style of
-scrutiny's \code{unround()}. With \code{unit = 10^-digits} and \code{h = unit / 2}:
+the interval of exact values consistent with the report. With
+\code{unit = 10^-digits} and \code{h = unit / 2}:
 }
 \details{
 \itemize{
-\item \code{"up_or_down"} (default): \verb{[x - h, x + h]}, both endpoints included —
-the agnostic choice when the rounding direction at ties is unknown.
+\item \code{"up_or_down"} (default): \verb{[x - h, x + h]}, both endpoints included — the
+agnostic choice when the direction at ties is unknown.
 \item \code{"up"} (round half up): \verb{[x - h, x + h)}.
 \item \code{"down"} (round half down): \verb{(x - h, x + h]}.
-\item \code{"even"} (banker's): \verb{[x - h, x + h]} both included — conservative, since
-whether a tie rounds to \code{x} depends on the parity of its last digit.
-\item \code{"ceiling"}: \verb{(x - unit, x]}.
-\item \code{"floor"}: \verb{[x, x + unit)}.
-\item \code{"trunc"} (toward zero): \verb{[x, x + unit)} for \code{x >= 0}, \verb{(x - unit, x]}
-for \code{x < 0}.
-\item \code{"anti_trunc"} (away from zero): the mirror of \code{"trunc"}.
+\item \code{"even"} (banker's): \verb{[x - h, x + h]}, both included.
+\item \code{"ceiling"}: \verb{(x - unit, x]}; \code{"floor"}: \verb{[x, x + unit)}.
+\item \code{"trunc"} (toward zero): \verb{[x, x + unit)} for \code{x >= 0}, \verb{(x - unit, x]} for
+\code{x < 0}. \code{"anti_trunc"} (away from zero) is its mirror.
 }
 
-Mirroring scrutiny's post-string API, the primary contract is a numeric \code{x}
-with \code{digits} supplied explicitly. A character \code{x} is accepted as a
-convenience for wrappers built above this layer (digits then inferred via
-[infer_digits()], preserving trailing zeros); a numeric \code{x} with \code{digits}
-missing is an error, because trailing zeros cannot be recovered from a
-numeric.
+The interval itself comes from [roundwork::unround()], so this package and
+the rest of the error-detection ecosystem unround a report the same way.
+This function is the adapter: it names the endpoints \code{lo}/\code{hi}/\code{lo_incl}/
+\code{hi_incl}, returns a plain list, and carries \code{digits} back out.
 
-The interval itself is computed by [scrutiny::unround()] rather than here,
-so that this package and the rest of the error-detection ecosystem unround
-a report the same way. This function is the adapter: it names the endpoints
-\code{lo}/\code{hi}/\code{lo_incl}/\code{hi_incl} and returns a plain list, which is the shape
-the bounds machinery consumes, and it carries \code{digits} back out.
-
-One case differs from the hand-rolled predecessor this replaced, and
-scrutiny is the one that is right: \code{x = 0} under \code{"trunc"} or
-\code{"anti_trunc"}. Truncation toward zero has no defined direction at zero
-itself, so the old code silently took the positive branch and returned
-\verb{[0, unit)}. scrutiny returns the sign-agnostic \verb{(-unit, unit)} for
-\code{"trunc"} and the degenerate \verb{[0, 0]} for \code{"anti_trunc"}.
-
-Both consumers absorb the difference, so no verdict moves: [sd_bounds()]
-intersects the mean's interval with the feasible mean band, which clips a
-below-scale endpoint back to \code{l}, and \code{brimmest()} clamps a reported SD's
-interval to non-negative before squaring it. The wider interval is in any
-case the conservative direction — it admits more exact values behind the
-report, never fewer.
+A numeric \code{x} needs \code{digits} supplied explicitly, since trailing zeros
+cannot be recovered from it. A character \code{x} is accepted as a convenience,
+with digits inferred via [scrutiny::decimal_places()].
 
 [x - h, x + h)`.
 \itemize{
 \item \code{"down"} (round half down): \verb{(x - h, x + h]: R:x\%20-\%20h,\%20x\%20+\%20h)\%60.\%0A*\%20\%60\%22down\%22\%60\%20(round\%20half\%20down):\%20\%60(x\%20-\%20h,\%20x\%20+\%20h [x - h, x + h]: R:x\%20-\%20h,\%20x\%20+\%20h [x, x + unit)} for \code{x >= 0}, `(x - unit, x]: R:x,\%20x\%20+\%20unit)\%60\%20for\%20\%60x\%20\%3E=\%200\%60,\%20\%60(x\%20-\%20unit,\%20x
-[infer_digits()]: R:infer_digits()
-[scrutiny::unround()]: R:scrutiny::unround()
-[0, 0]: R:0,\%200
-[sd_bounds()]: R:sd_bounds()
+[roundwork::unround()]: R:roundwork::unround()
+[scrutiny::decimal_places()]: R:scrutiny::decimal_places()
 }
 }
 \examples{

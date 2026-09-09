@@ -8,7 +8,7 @@ sd_bounds_curve(
   l,
   u,
   n,
-  Z = "quasiinteger",
+  granularity = "quasiinteger",
   scoring = "singleitem",
   n_items = 1,
   alpha = NULL,
@@ -20,34 +20,32 @@ sd_bounds_curve(
 
 \item{n}{Integer scalar, sample size.}
 
-\item{Z}{granularity; \code{"quasiinteger"} (default) gives a hole-free floor.}
+\item{granularity}{Granularity; \code{"quasiinteger"} (default) gives a hole-free
+floor.}
 
 \item{scoring, n_items, alpha}{As in \code{\link[=sd_bounds]{sd_bounds()}}.}
 
-\item{by}{Numeric or NULL; mean-grid spacing (default ~ \code{(u - l) / 1000}).}
+\item{by}{Numeric or NULL; mean-grid spacing (default \code{(u - l) / 1000}).}
 }
 \value{
-A data.frame: \code{mean}, \code{min_sd}, \code{max_sd}, \code{feasible}, \code{pomp_mean},
-\code{parity_max}, \code{ceil_parity} (= \code{max_sd / parity_max}), \code{floor_parity}.
-The \code{"step"} attribute records the uniform grid spacing \code{by} actually
-used. The mean grid is deliberately NOT uniform - the kinks and their
-neighbourhoods are sampled far more densely than \code{by} - so the spacing
-cannot be recovered from the returned means, and a consumer that needs to
-tell a sampling gap from a genuine gap in the band (as \code{\link[=band_polygon]{band_polygon()}}
-and hence \code{\link[=plot_sd_bounds]{plot_sd_bounds()}} must) has to be told. See \code{\link[=plot_sd_bounds]{plot_sd_bounds()}}.
+A tibble: \code{mean}, \code{min_sd}, \code{max_sd}, \code{feasible}, \code{pomp_mean},
+\code{parity_max}, \code{ceil_parity} (= \code{max_sd / parity_max}), \code{floor_parity}. The
+\code{"step"} attribute records the uniform spacing \code{by} actually used. The
+mean grid is deliberately NOT uniform — the kinks and their neighbourhoods
+are sampled far more densely than \code{by} — so the spacing cannot be
+recovered from the returned means, and a consumer that must tell a
+sampling gap from a genuine gap in the band (as \code{\link[=band_polygon]{band_polygon()}}, and
+hence \code{\link[=plot_sd_bounds]{plot_sd_bounds()}}, must) has to be told.
 }
 \description{
 Traces the minimum and maximum sample SD as the mean sweeps \verb{[l, u]}, on a
-grid dense enough to resolve the piecewise floors and the Structure S ceiling
-(their kinks fall on the \code{1/(n * m)} lattice, \code{m = n_items} for mean-scored
-data else 1). Under a granularity constraint the quasi-integer floor is
-defined at every mean, so the curves have no gaps — unlike a strict-integer
-floor, which exists only at GRIM means. Returns raw bounds and their
-parity-normalised counterparts for the POMP plot.
+grid dense enough to resolve the piecewise floors and the Structure S
+ceiling, whose kinks fall on the \code{1/(n * n_items)} lattice. Under a
+granularity constraint the quasi-integer floor is defined at every mean, so
+the curves have no gaps.
 }
 \examples{
 curve <- sd_bounds_curve(l = 1, u = 7, n = 30, by = 0.1)
-head(curve[, c("mean", "min_sd", "max_sd")])
 
 # the ceiling peaks near the scale midpoint
 curve[which.max(curve$max_sd), c("mean", "min_sd", "max_sd")]

@@ -4,7 +4,13 @@
 \alias{sd_min_one_pin}
 \title{Minimum SD with one observed extreme attained (one-pin floor)}
 \usage{
-sd_min_one_pin(pin, n, mean, Z = "continuous", side = c("max", "min"))
+sd_min_one_pin(
+  pin,
+  n,
+  mean,
+  granularity = "continuous",
+  side = c("max", "min")
+)
 }
 \arguments{
 \item{pin}{Numeric scalar, the attained extreme.}
@@ -13,7 +19,7 @@ sd_min_one_pin(pin, n, mean, Z = "continuous", side = c("max", "min"))
 
 \item{mean}{Numeric scalar.}
 
-\item{Z}{One of "continuous", "integer", "quasiinteger".}
+\item{granularity}{One of "continuous", "integer", "quasiinteger".}
 
 \item{side}{"max" if the pin is the observed maximum, "min" if the minimum.}
 }
@@ -22,13 +28,11 @@ Numeric scalar, the minimum sample SD.
 }
 \description{
 One observation pinned at a single attained extreme, the other side at most
-walled (the attained-extremes analysis, mixed constraint sets). NOT the
-two-pin formula with a pin deleted: the interior count is \code{n - 1}, not
-\code{n - 2}. Continuous floor \verb{SS = n q^2 / (n - 1)} (strictly sharper than the
-Laguerre-Samuelson corollary), plus the same granularity terms on the
-\code{n - 1} free observations. Requires a mean (without one the floor is zero:
-all observations may sit at the pin). The mirror case is handled by
-reflection.
+walled. NOT the two-pin formula with a pin deleted: the interior count is
+\code{n - 1}, not \code{n - 2}. Continuous floor \verb{SS = n q^2 / (n - 1)} (strictly
+sharper than the Laguerre-Samuelson corollary), plus the same granularity
+terms on the \code{n - 1} free observations. Requires a mean; without one the
+floor is zero, since all observations may sit at the pin.
 }
 \examples{
 # an observed maximum of 7 alongside a mean of 3 forces some spread

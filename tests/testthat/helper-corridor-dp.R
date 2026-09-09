@@ -1,7 +1,7 @@
 # The corridor DP that brimmest() used to fall back on, kept here as the
-# independent oracle for .certify_fast().
+# independent oracle for certify_fast().
 #
-# It answers exactly the question .certify_fast() answers -- can n integers in
+# It answers exactly the question certify_fast() answers -- can n integers in
 # [0, W] realise any of these (S, Q-window) targets? -- by a different method:
 # a dynamic program over reachable (sum, sum-of-squares) states, confined to a
 # corridor around the targets. Two implementations agreeing cell for cell over
@@ -13,18 +13,18 @@
 # budget, so the fallback branch never ran in production. See
 # paper/method-brimmest/certification-fast-path-plan.md.
 #
-# Depends on strait-internal .gcd2(); everything else is self-contained.
+# Depends on strait-internal gcd2(); everything else is self-contained.
 
 # Internal: can n integers in [0, W] realise any of the given (S, Q-window)
 # targets? Exact in both directions. Returns TRUE / FALSE, or NA when the
 # corridor would still exceed max_cells (caller falls back to the lattice).
-.attainable_target <- function(W, n, tg, max_cells = 2e7) {
+attainable_target <- function(W, n, tg, max_cells = 2e7) {
   if (is.null(tg) || !nrow(tg)) {
     return(FALSE)
   }
   ys <- 0:W
   pr <- ys * (W - ys) # each item's contribution to R
-  g <- Reduce(strait:::.gcd2, pr[pr > 0])
+  g <- Reduce(strait:::gcd2, pr[pr > 0])
   if (!length(g) || is.na(g) || g < 1) {
     g <- 1
   }

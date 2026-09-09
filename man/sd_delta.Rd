@@ -4,7 +4,7 @@
 \alias{sd_delta}
 \title{The count-parity correction to the mean-conditional ceiling}
 \usage{
-sd_delta(mean, n, lower, upper, tol = 1e-09)
+sd_delta(mean, n, lower, upper, tol = TOLERANCE)
 }
 \arguments{
 \item{mean}{Numeric vector, mean(s) in \verb{[lower, upper]}.}
@@ -32,19 +32,17 @@ the upper, and those must be whole numbers. Rounding them costs
 \deqn{\delta = 1 - n \, \mathrm{frac}(n_l)\, \mathrm{frac}(n_u) / (n_l n_u)}
 
 so that the sharp maximum is
-\eqn{s_{\max}^2 = \frac{n}{n-1}(u - m)(m - l)\,\delta}. \code{\link[=sd_max_muilwijk]{sd_max_muilwijk()}}
-computes the uncorrected arch and \code{\link[=sd_max_structure_s]{sd_max_structure_s()}} the corrected
-maximum; this returns the correction between them.
+\eqn{s_{\max}^2 = \frac{n}{n-1}(u - m)(m - l)\,\delta}.
+\code{\link[=sd_max_muilwijk]{sd_max_muilwijk()}} computes the uncorrected arch and
+\code{\link[=sd_max_structure_s]{sd_max_structure_s()}} the corrected maximum; this returns the correction
+between them.
 
 \code{delta} is interpretable on its own: it is the fraction of Muilwijk's ceiling
 that is actually reachable. It equals 1 exactly when both counts are whole,
-and falls toward 0 as the mean approaches a scale limit, where the ceiling is
-least attainable.
+and falls toward 0 as the mean approaches a scale limit.
 
 Computed through the corrected sum of squares rather than as a ratio, because
 \code{n_l * n_u} vanishes at the limits and the ratio form is then \code{0/0}.
-Fractional parts are snapped with \code{tol} so that counts whole up to floating
-point give exactly 1.
 }
 \examples{
 # whole counts at the midpoint of a 1-5 scale at n = 7: delta = 6/7
@@ -52,11 +50,6 @@ sd_delta(mean = 3, n = 7, lower = 1, upper = 5)
 
 # close to a limit the ceiling is barely attainable
 sd_delta(mean = 1.07, n = 7, lower = 1, upper = 5)
-
-# it is exactly the gap between the two ceilings strait already exports
-m <- c(2, 3, 4)
-sd_max_structure_s(m, 7, 1, 5)^2
-sd_max_muilwijk(m, 7, 1, 5)^2 * sd_delta(m, 7, 1, 5)
 }
 \seealso{
 \code{\link[=sd_max_muilwijk]{sd_max_muilwijk()}} for the uncorrected arch,

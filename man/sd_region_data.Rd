@@ -8,17 +8,14 @@ sd_region_data(
   l,
   u,
   n,
-  rule = c("quasi", "range", "range_n", "mean", "muilwijk", "mean_naive_floor",
-    "mestdagh", "pesant_regin", "alpha", "integer", "integer_alpha", "attainable",
-    "attainable_alpha"),
+  rule = REGION_RULES,
   scoring = NULL,
   n_items = 1,
   alpha = NULL,
   digits = 2,
   by = NULL,
   round_digits = NULL,
-  rounding = c("half_up", "half_down", "native", "ceiling", "floor", "trunc",
-    "anti_trunc")
+  rounding = ROUNDING_RULES
 )
 }
 \arguments{
@@ -31,9 +28,7 @@ sd_region_data(
 
 \item{scoring}{One of \code{"singleitem"}, \code{"sumscored"}, \code{"meanscored"}, as in
 \code{\link[=sd_bounds]{sd_bounds()}}. Defaults to \code{"meanscored"} when \code{n_items > 1} and
-\code{"singleitem"} otherwise. Under \code{"sumscored"}, \code{l} and \code{u} are the
-composite's limits and the reported values live on the unit grid, so
-\code{n_items} enters only as Cronbach's alpha's \code{k}.}
+\code{"singleitem"} otherwise.}
 
 \item{n_items}{Integer, number of items in the composite (default 1).}
 
@@ -47,34 +42,31 @@ the lattice rules, which step by \code{10^-digits}.}
 
 \item{round_digits}{Optionally round the returned \verb{(mean, sd)} lattice to
 this many decimal places, collapsing pairs that round together. \code{NULL}
-(default) returns them unrounded, which for the \code{"attainable"} rules means
-exactly. Band rules are unaffected: rounding a bound can turn it
-anti-conservative, so bounds are always returned at full precision.}
+(default) returns them unrounded. Band rules are unaffected: rounding a
+bound can turn it anti-conservative.}
 
 \item{rounding}{How to round when \code{round_digits} is given. \code{"half_up"}
-(default) and the other named rules use scrutiny's implementations, so the
-vocabulary matches GRIM and GRIMMER; \code{"native"} is base R's \code{round()},
-which rounds halves to even.}
+(default) and the other named rules use roundwork's implementations;
+\code{"native"} is base R's \code{round()}, which rounds halves to even.}
 }
 \value{
-For band rules, a data frame with \code{mean}, \code{lo}, \code{hi}. For the lattice
-rules (\code{"integer"}, \code{"integer_alpha"}, \code{"attainable"},
-\code{"attainable_alpha"}), a data frame with \code{mean}, \code{sd}: the tuples passing
-every applicable test. The \code{type} attribute is \code{"band"} or \code{"points"}.
+A tibble with \code{mean}, \code{lo}, \code{hi} and \code{sd}, and a \code{type} attribute of
+\code{"band"} or \code{"points"}. Band rules fill \code{lo} and \code{hi} and leave \code{sd} \code{NA};
+the lattice rules (\code{"integer"}, \code{"integer_alpha"}, \code{"attainable"},
+\code{"attainable_alpha"}) fill \code{sd} with the tuples passing every applicable
+test and leave \code{lo} and \code{hi} \code{NA}.
 }
 \description{
-The \verb{(mean, lo, hi)} band, or the lattice of attainable reported \verb{(mean, sd)}
-tuples, for a chosen constraint set. See \code{\link[=plot_sd_region]{plot_sd_region()}} for the \code{rule}
-vocabulary; this is the data behind that plot.
+The \verb{(mean, lo, hi)} band, or the lattice of attainable reported
+\verb{(mean, sd)} tuples, for a chosen constraint set. See \code{\link[=plot_sd_region]{plot_sd_region()}} for
+the \code{rule} vocabulary; this is the data behind that plot.
 }
 \examples{
-# a band rule returns (mean, lo, hi) across the scale
+# a band rule fills lo/hi across the scale
 band <- sd_region_data(l = 1, u = 5, n = 7, rule = "quasi")
-head(band)
 attr(band, "type")
 
-# a lattice rule returns the attainable (mean, sd) tuples themselves
-pts <- sd_region_data(l = 1, u = 5, n = 7, rule = "attainable")
-head(pts)
-attr(pts, "type")
+# a lattice rule fills sd with the attainable tuples themselves
+points <- sd_region_data(l = 1, u = 5, n = 7, rule = "attainable")
+attr(points, "type")
 }

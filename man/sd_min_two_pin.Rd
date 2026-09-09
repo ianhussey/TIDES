@@ -4,7 +4,7 @@
 \alias{sd_min_two_pin}
 \title{Minimum SD with both observed extremes attained (two-pin floor)}
 \usage{
-sd_min_two_pin(a, b, n, mean = NULL, Z = "continuous")
+sd_min_two_pin(a, b, n, mean = NULL, granularity = "continuous")
 }
 \arguments{
 \item{a, b}{Numeric scalars, observed minimum and maximum (attained).}
@@ -13,7 +13,7 @@ sd_min_two_pin(a, b, n, mean = NULL, Z = "continuous")
 
 \item{mean}{Numeric scalar or NULL. If NULL, the mean-agnostic floor.}
 
-\item{Z}{One of "continuous", "integer", "quasiinteger".}
+\item{granularity}{One of "continuous", "integer", "quasiinteger".}
 }
 \value{
 Numeric scalar, the minimum sample SD.
@@ -21,12 +21,10 @@ Numeric scalar, the minimum sample SD.
 \description{
 One observation pinned at each observed extreme. Without a mean this is the
 Nagy (1918) / Thomson (1955) floor \code{W / sqrt(2 (n - 1))}. With a mean it is
-the pinned-plus-interior decomposition of the attained-extremes analysis:
-\code{SS = p^2 + q^2 + (p - q)^2 / (n - 2)} plus, for integer data, the
-Pesant-Regin clustering of the \code{n - 2} interior observations, and for
-quasi-integer data the \code{g (1 - g)} relaxation. The mean must lie in the
-feasible band \verb{[a + W/n, b - W/n]} (see \code{\link[=feasible_mean_band]{feasible_mean_band()}}); this
-function does not check it.
+the pinned-plus-interior decomposition of the attained-extremes analysis,
+plus, for integer data, the Pesant-Regin clustering of the \code{n - 2} interior
+observations. The mean must lie in the feasible band (see
+\code{\link[=feasible_mean_band]{feasible_mean_band()}}); this function does not check it.
 }
 \examples{
 # mean-agnostic floor: one observation pinned at each observed extreme
@@ -34,5 +32,5 @@ sd_min_two_pin(a = 1, b = 7, n = 30)
 
 # knowing the mean sharpens it, and granularity sharpens it again
 sd_min_two_pin(a = 1, b = 7, n = 30, mean = 3)
-sd_min_two_pin(a = 1, b = 7, n = 30, mean = 3, Z = "integer")
+sd_min_two_pin(a = 1, b = 7, n = 30, mean = 3, granularity = "integer")
 }

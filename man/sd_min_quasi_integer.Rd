@@ -15,10 +15,10 @@ sd_min_quasi_integer(mean, n)
 Numeric vector, the minimum sample SD at each mean.
 }
 \description{
-All but one observation an integer (the quasi-integer constraint, i.e. all
-but one observation on the grid). Defined at every real mean; coincides with
-\code{\link[=sd_min_integer]{sd_min_integer()}} at GRIM-consistent means and dips between them, so it is
-a valid floor under either the strict or the relaxed hypothesis. Range-free.
+All but one observation an integer. Defined at every real mean; coincides
+with \code{\link[=sd_min_integer]{sd_min_integer()}} at GRIM-consistent means and dips between them, so it
+is a valid floor under either the strict or the relaxed hypothesis.
+Range-free.
 }
 \examples{
 # at a GRIM-consistent mean it agrees with the strict-integer floor

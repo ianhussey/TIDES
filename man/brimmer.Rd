@@ -11,11 +11,11 @@ brimmer(
   b = NULL,
   n = NULL,
   mean = NULL,
-  mean_digits = NULL,
+  digits_mean = NULL,
   sd = NULL,
-  sd_digits = NULL,
+  digits_sd = NULL,
   rounding = "up_or_down",
-  Z = c("continuous", "integer", "quasiinteger"),
+  granularity = c("continuous", "integer", "quasiinteger"),
   scoring = c("singleitem", "sumscored", "meanscored"),
   n_items = 1,
   alpha = NULL
@@ -28,23 +28,20 @@ brimmer(
 
 \item{n}{Integer scalar, sample size.}
 
-\item{mean}{Numeric scalar or NULL, the reported mean.}
+\item{mean}{Numeric scalar or NULL, the reported sample mean.}
 
-\item{mean_digits}{Integer scalar or NULL, its reported decimal places
-(required when \code{mean} and \code{rounding} are both given).}
+\item{digits_mean}{Integer scalar or NULL, decimal places of the reported
+mean (required with \code{rounding}).}
 
-\item{sd}{Numeric scalar or NULL, the reported SD — the thing being
-checked. NULL runs the mean-side tests only, which is what \code{\link[=brim]{brim()}}
-does; the SD columns are then \code{NA}.}
+\item{sd}{Numeric scalar or NULL, the reported SD — the thing being checked.
+NULL runs the mean-side tests only, which is what \code{\link[=brim]{brim()}} does.}
 
-\item{sd_digits}{Integer scalar or NULL, its reported decimal places
-(required when \code{rounding} is given).}
+\item{digits_sd}{Integer scalar or NULL, decimal places of the reported SD.}
 
-\item{rounding}{Rounding rule for unrounding the reported values
-(default \code{"up_or_down"}); NULL treats inputs as exact. See
-\code{\link[=unround_interval]{unround_interval()}}.}
+\item{rounding}{Rounding rule for unrounding the reported values (default
+\code{"up_or_down"}); NULL treats inputs as exact. See \code{\link[=unround_interval]{unround_interval()}}.}
 
-\item{Z}{"continuous" (default), "integer", or "quasiinteger".}
+\item{granularity}{"continuous" (default), "integer", or "quasiinteger".}
 
 \item{scoring}{"singleitem" (default), "sumscored", or "meanscored".}
 
@@ -53,13 +50,11 @@ does; the SD columns are then \code{NA}.}
 \item{alpha}{Numeric scalar or NULL, reported Cronbach's alpha.}
 }
 \value{
-A one-row data.frame: \code{consistent} (logical), \code{failed_tests}
-(comma-separated names, "" if none), then the \code{\link[=sd_bounds]{sd_bounds()}} columns
-\code{min_sd}, \code{max_sd}, \code{feasible}, the BRIM predicate \code{in_scale_range}, then
-\code{grim}, \code{grimmer}, \code{sd_in_bounds}, the
-percent-of-maximum-possible transforms \code{pomp_mean}, \code{pomp_sd_parity}
-(linear, against the mean-agnostic parity ceiling) and \code{pomp_sd_sharp}
-(position within the sharp mean-conditional band), and \code{note}.
+A one-row tibble: \code{consistent} (logical), \code{failed_tests}
+(comma-separated names, \code{""} if none), the \code{\link[=sd_bounds]{sd_bounds()}} columns \code{min_sd},
+\code{max_sd}, \code{feasible}, the BRIM predicate \code{in_scale_range}, then \code{grim},
+\code{grimmer}, \code{sd_in_bounds}, the POMP transforms \code{pomp_mean},
+\code{pomp_sd_parity} and \code{pomp_sd_sharp}, and \code{note}.
 }
 \description{
 Bounds-Related Inconsistency of Means and Errors Reported. The SD-side
@@ -69,62 +64,47 @@ sample size and the reported mean. \code{\link[=brim]{brim()}} is the mean-side 
 needs no SD.
 }
 \details{
-The report-checking wrapper above \code{\link[=sd_bounds]{sd_bounds()}}: give it the reported
-summary statistics as they appear in a paper (numeric values plus their
-reported decimal places), and it unrounds them, computes the bounds
-envelope, runs the applicable consistency tests, and returns a single
-consistent/inconsistent verdict with the reasons.
-
-BRIMMER is nested on top of BRIM, exactly as GRIMMER is nested on top of
-GRIM: it applies the mean-side test and then adds the SD-side one. A report
-is consistent only if every applicable test passes, and each names a
-distinct defect.
-
-Tests applied (each only when its inputs are present):
+BRIMMER is nested on top of BRIM exactly as GRIMMER is nested on top of
+GRIM. A report is consistent only if every applicable test passes, and each
+names a distinct defect:
 \itemize{
 \item \code{in_scale_range} — the BRIM predicate: can the reported mean's rounding
-interval meet the feasible mean band at all? Bounds only, independent of
-granularity; with attained extremes the band narrows (see
-\code{\link[=feasible_mean_band]{feasible_mean_band()}}). Run by \code{\link[=brim]{brim()}} on its own.
+interval meet the feasible mean band at all? See \code{\link[=feasible_mean_band]{feasible_mean_band()}}.
 \item \code{bounds} — does the reported SD's own rounding interval overlap
-\verb{[min_sd, max_sd]}? (The package's validated mathematics.)
+\verb{[min_sd, max_sd]}?
 \item \code{feasibility} — a residual: the constraint set admits no sample for a
 reason none of the other tests already accounts for, such as an alpha
-floor exceeding the alpha ceiling. An out-of-range mean reports as
-\code{in_scale_range} and a granular-impossible one as \code{grim}, so neither
-double-counts here.
+floor exceeding the alpha ceiling.
 \item \code{grim}, \code{grimmer} — scrutiny's verdicts, deferred verbatim (only under
-\code{Z = "integer"} with \code{rounding}). NOTE scrutiny's GRIMMER (and, under
-\code{rounding = "up"}, GRIM) have documented floating-point boundary bugs,
-including false flags under the default rounding. When GRIMMER is the ONLY
-failing test, the note says so explicitly, since that pattern matches
-the documented false-flag family.
+\code{granularity = "integer"} with \code{rounding}). When GRIMMER is the only
+failing test the note says so, since that pattern matches scrutiny's
+documented false-flag family.
 }
 
-\code{consistent} is TRUE iff every applicable test passes. \code{failed_tests}
-names the failures (empty string if none).
-
-Unlike \code{\link[=sd_bounds]{sd_bounds()}}, \code{rounding} here defaults to \code{"up_or_down"} — a
+Unlike \code{\link[=sd_bounds]{sd_bounds()}}, \code{rounding} here defaults to \code{"up_or_down"}, since a
 report-checking context virtually always deals with rounded values. Pass
-\code{rounding = NULL} to treat the inputs as exact instead (digits then
-unused).
+\code{rounding = NULL} to treat the inputs as exact.
 }
 \examples{
 # a perfectly ordinary report on a 1-7 scale
-# (witnessed by c(rep(1, 20), rep(7, 9), 6): mean 2.9667, sd 2.8343)
-brimmer(l = 1, u = 7, n = 30, mean = 2.97, mean_digits = 2,
-        sd = 2.83, sd_digits = 2, Z = "integer")
+brimmer(
+  l = 1, u = 7, n = 30, mean = 2.97, digits_mean = 2,
+  sd = 2.83, digits_sd = 2, granularity = "integer"
+)
 
 # SD below the quasi-integer floor: inconsistent via the bounds test
-brimmer(l = 1, u = 7, n = 30, mean = 2.97, mean_digits = 2,
-        sd = 0.10, sd_digits = 2, Z = "quasiinteger")
+brimmer(
+  l = 1, u = 7, n = 30, mean = 2.97, digits_mean = 2,
+  sd = 0.10, digits_sd = 2, granularity = "quasiinteger"
+)
 
-# GRIM-impossible mean: inconsistent via feasibility (and grim)
-brimmer(l = 1, u = 7, n = 30, mean = 3.51, mean_digits = 2,
-        sd = 1.00, sd_digits = 2, Z = "integer")
+# GRIM-impossible mean: inconsistent via grim
+brimmer(
+  l = 1, u = 7, n = 30, mean = 3.51, digits_mean = 2,
+  sd = 1.00, digits_sd = 2, granularity = "integer"
+)
 }
 \seealso{
 \code{\link[=brim]{brim()}} for the mean-side test, \code{\link[=brimmest]{brimmest()}} for the exact
-certificate that settles what this test can only screen, and
-\code{\link[=brimmer_multiple]{brimmer_multiple()}} to apply this across a data frame.
+certificate, and \code{\link[=brimmer_map]{brimmer_map()}} to apply this across a data frame.
 }

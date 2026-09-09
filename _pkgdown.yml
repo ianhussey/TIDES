@@ -1,0 +1,62 @@
+url: https://ianhussey.github.io/strait/
+
+template:
+  bootstrap: 5
+
+reference:
+  - title: Report checking
+    desc: >
+      The three nested tests, cheapest first. `brim()` and `brimmer()` are
+      necessary but not sufficient; `brimmest()` is both.
+    contents:
+      - brim
+      - brimmer
+      - brimmest
+      - brimmer_map
+      - brimmest_map
+
+  - title: Bounds
+    desc: The closed-form SD bounds and a sample attaining them.
+    contents:
+      - sd_bounds
+      - sd_bounds_sample
+      - feasible_mean_band
+
+  - title: Plots
+    contents:
+      - plot_sd_bounds
+      - plot_sd_bounds_pomp
+      - plot_sd_region
+      - plot_umbrella
+
+  - title: Plot data
+    desc: The builders behind the plots, returned as data.
+    contents:
+      - sd_bounds_curve
+      - sd_region_data
+      - umbrella_data
+      - umbrella_contour
+      - band_polygon
+
+  - title: Bound primitives
+    desc: One closed-form formula each; the pieces `sd_bounds()` dispatches to.
+    contents:
+      - sd_max_span
+      - sd_max_span_n
+      - sd_max_muilwijk
+      - sd_max_structure_s
+      - sd_min_integer
+      - sd_min_quasi_integer
+      - sd_min_one_pin
+      - sd_min_two_pin
+      - sd_delta
+
+  - title: Composite reliability
+    desc: Bounds conditioned on a reported Cronbach's alpha.
+    contents:
+      - sd_bounds_alpha
+      - v_max_alpha
+
+  - title: Reported precision
+    contents:
+      - unround_interval

@@ -9,15 +9,14 @@ brimmest(
   u,
   n,
   mean,
+  digits_mean,
   sd,
-  digits = NULL,
-  mean_digits = NULL,
-  sd_digits = NULL,
+  digits_sd,
   rounding = c("half_up", "half_down"),
   scoring = c("singleitem", "sumscored", "meanscored"),
   n_items = 1,
-  max_cells = 2e+07,
-  search_budget = 2e+05
+  max_cells = MAX_LATTICE_CELLS,
+  search_budget = SEARCH_BUDGET
 )
 }
 \arguments{
@@ -29,11 +28,8 @@ units when \code{n_items > 1} and \code{scoring} is \code{"meanscored"}).}
 \item{mean, sd}{Numeric vectors of reported means and SDs, recycled against
 each other. All are certified against one lattice.}
 
-\item{digits}{Integer, the reported decimal places, used for both \code{mean}
-and \code{sd} unless the next two are given.}
-
-\item{mean_digits, sd_digits}{Integer scalars or NULL; reported decimal
-places when the mean and SD are reported to different precision.}
+\item{digits_mean, digits_sd}{Integer scalars, the reported decimal places of
+the mean and of the SD.}
 
 \item{rounding}{Character vector of rounding rules to admit, from
 \code{"half_up"}, \code{"half_down"}, \code{"native"}, \code{"ceiling"}, \code{"floor"},
@@ -44,20 +40,16 @@ any of them.}
 
 \item{n_items}{Positive whole number of response items (default 1).}
 
-\item{max_cells}{Guard on the lattice enumeration's state space (default
-\code{2e7}); a design above it takes the targeted route instead, and the
-lattice errors rather than exhausting memory if asked for directly.}
+\item{max_cells}{Guard on the lattice enumeration's state space; a design
+above it takes the targeted route instead.}
 
-\item{search_budget}{Node budget for the constructive search (default
-\code{2e5}). Measured across 2,719,364 reporting-grid cells and six designs
-the budget was never reached, so this is a safety valve rather than a
-tuning knob; a report that does exhaust it errors rather than returning
-a guess.}
+\item{search_budget}{Node budget for the constructive search. A report that
+exhausts it errors rather than returning a guess.}
 }
 \value{
-A data.frame with one row per reported tuple: \code{mean}, \code{sd},
-\code{possible} (logical), and \code{rules} — the rounding rules under which the
-tuple is reachable, comma-separated and \code{""} when none.
+A tibble with one row per reported tuple: \code{mean}, \code{sd}, \code{possible}
+(logical), and \code{rules} — the rounding rules under which the tuple is
+reachable, comma-separated and \code{""} when none.
 }
 \description{
 Bounds-Related Inconsistency of Means and Errors, Settled Test. An exact
@@ -65,99 +57,66 @@ possible / impossible certificate for reported summary statistics on a
 bounded integer scale, obtained without reconstructing any dataset.
 }
 \details{
-\code{brimmest()} completes the family, and the superlative is the point.
 \code{\link[=brim]{brim()}} and \code{\link[=brimmer]{brimmer()}} — like GRIM and GRIMMER before them — test
 conditions that are \emph{necessary but not sufficient}: failing one proves a
-report impossible, but passing them all proves nothing. A handful of tuples
-clear the SD bounds, GRIM and GRIMMER together and still correspond to no
-integer dataset.
-
-\code{brimmest()} is \emph{necessary and sufficient}. It enumerates the exact
-attainable \verb{(mean, sd)} lattice for the design by dynamic programming over
-the reachable \verb{(sum, sum of squares)} states, rounds that lattice to the
-reporting precision, and asks whether the reported tuple is a member. The
-verdict is therefore exact in both directions: a hit means some integer
-sample on \verb{[l, u]} of size \code{n} rounds to exactly this report, so it is
-\strong{possible}; a miss means no such sample exists, so it is \strong{impossible} —
-a proof, not a heuristic flag. Nothing in the GRIM family can make the
-second claim.
-
-The three tests are nested, cheapest first:\tabular{lll}{
+report impossible, but passing them all proves nothing. \code{brimmest()} is
+necessary \emph{and} sufficient. It enumerates the exact attainable \verb{(mean, sd)}
+lattice for the design, rounds it to the reporting precision, and asks
+whether the reported tuple is a member. A hit means some integer sample on
+\verb{[l, u]} of size \code{n} rounds to exactly this report; a miss means none does.\tabular{lll}{
    test \tab asks \tab verdict \cr
    \code{\link[=brim]{brim()}} \tab is the reported mean attainable? \tab necessary only \cr
    \code{\link[=brimmer]{brimmer()}} \tab and is the reported SD attainable with it? \tab necessary only \cr
-   \code{brimmest()} \tab is the pair jointly attainable by real integer data? \tab necessary and sufficient \cr
+   \code{brimmest()} \tab is the pair jointly attainable by integer data? \tab necessary and sufficient \cr
 }
 
 
-This is the same question the CLOSURE algorithm answers (see
-\code{unsum::closure_generate()}), reached analytically rather than by search —
-an \emph{analytic CLOSURE certification}. The trade is that no witness datasets
-are produced: the lattice records which \verb{(mean, sd)} pairs are reachable,
-not how. In exchange the cost depends only on \code{l}, \code{u} and \code{n}, not on how
-many datasets happen to satisfy the constraints. The certification
-validation document in \verb{validation/} reports the comparison against CLOSURE
-in full.
+This is the question \code{unsum::closure_generate()} answers by search, reached
+analytically instead. No witness datasets are produced, but the cost depends
+only on \code{l}, \code{u} and \code{n}.
+
+Two routes reach the same verdict, chosen automatically by design size. For
+a small design the whole lattice is enumerated once, cached per \verb{(l, u, n)},
+and every report matched against it. For a large design asked about a
+handful of reports, the report itself pins both coordinates almost
+completely, and a closed-form sandwich plus a pruned constructive search
+settles it without the lattice — which is the only option on a wide scale,
+where the state table exceeds \code{max_cells}.
 }
-\section{How the work is done}{
-
-Two routes reach the same verdict, chosen automatically by design size.
-
-For a small design the whole attainable lattice is enumerated once and the
-reports matched against it, so a vector of tuples costs barely more than a
-single one. The lattice is cached per \verb{(l, u, n)}, so repeated calls on one
-design pay for it once.
-
-For a large design asked about a handful of reports, enumerating everything
-to answer a membership question is wasteful — and on a wide scale it is
-impossible, since the state table outgrows \code{max_cells}. A reported tuple
-pins both coordinates almost completely: the mean's rounding interval
-admits only a few integer sums, and each of those pins the sum of squares
-to a narrow window. That reduces certification to a question about one
-sample sum at a time, which is answered in two escalating steps.
-
-A closed-form sandwich comes first. For a given sum the achievable sums of
-squares lie between the clustered configuration and the Structure-S one,
-and all share the sum's parity; a window meeting no admissible integer
-between them is impossible on arithmetic alone. What survives goes to a
-constructive search over non-increasing samples — the partitions of the sum
-— with the same sandwich re-applied at every step to what is left to place.
-Reaching a complete sample proves possibility and produces a witness;
-exhausting the search proves impossibility. The verdict is therefore exact
-in both directions whenever the search terminates, and \code{search_budget} —
-not the absence of a theorem — is the only thing that can withhold one.
-
-The practical effect is that designs the lattice refuses outright become
-answerable — a 0-63 inventory at \code{n = 50} needs a 3151 x 24801 table, and
-certifies in milliseconds without one.
-}
-
 \section{Rounding and the direction of proof}{
 
 A hit certifies possibility under whichever rounding rule produced it. A
-miss certifies impossibility only \emph{relative to the rules in \code{rounding}},
-because a report unreachable under one convention may be reachable under
-another. The default takes the union of \code{"half_up"} and \code{"half_down"},
-which spans the usual ambiguity about how a source rounded its halves.
-Narrow it only when the source's convention is actually known: certifying
-against one rule when the paper used another manufactures a false
-impossibility. Note that unlike \code{\link[=brimmer]{brimmer()}} there is no \code{"up_or_down"}
-option, since rounding the lattice forward needs a definite direction.
+miss certifies impossibility only \emph{relative to the rules in \code{rounding}}: a
+report unreachable under one convention may be reachable under another. The
+default takes the union of \code{"half_up"} and \code{"half_down"}. Narrow it only
+when the source's convention is actually known, since certifying against one
+rule when the paper used another manufactures a false impossibility. Unlike
+\code{\link[=brimmer]{brimmer()}} there is no \code{"up_or_down"} option, because rounding the lattice
+forward needs a definite direction.
 }
 
 \examples{
 # a report a real 1-5 scale sample can produce
-brimmest(l = 1, u = 5, n = 9, mean = 3.0, sd = 1.0, digits = 1)
+brimmest(
+  l = 1, u = 5, n = 9, mean = 3.0, digits_mean = 1,
+  sd = 1.0, digits_sd = 1
+)
 
 # inside the SD bounds and passing GRIM and GRIMMER, yet no integer
 # sample produces it: the residual blind spot of the closed-form screen
-brimmest(l = 1, u = 5, n = 9, mean = 1.3, sd = 0.9, digits = 1)
+brimmest(
+  l = 1, u = 5, n = 9, mean = 1.3, digits_mean = 1,
+  sd = 0.9, digits_sd = 1
+)
 
 # one lattice certifies many reports at once
-brimmest(l = 1, u = 5, n = 9, digits = 1,
-        mean = c(3.0, 1.3, 2.5), sd = c(1.0, 0.9, 1.2))
+brimmest(
+  l = 1, u = 5, n = 9,
+  mean = c(3.0, 1.3, 2.5), digits_mean = 1,
+  sd = c(1.0, 0.9, 1.2), digits_sd = 1
+)
 }
 \seealso{
-\code{\link[=brim]{brim()}} and \code{\link[=brimmer]{brimmer()}} for the closed-form screens to run
-first, and \code{\link[=sd_region_data]{sd_region_data()}} for the lattice itself.
+\code{\link[=brim]{brim()}} and \code{\link[=brimmer]{brimmer()}} for the closed-form screens to run first,
+and \code{\link[=sd_region_data]{sd_region_data()}} for the lattice itself.
 }

@@ -1,4 +1,4 @@
-^STRAIT\.Rproj$
+^strait\.Rproj$
 ^\.Rproj\.user$
 ^doc$
 ^Meta$
@@ -12,3 +12,9 @@
 ^paper$
 ^app$
 ^dev$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^air\.toml$
+^TODO\.md$
+^CITATION\.cff$

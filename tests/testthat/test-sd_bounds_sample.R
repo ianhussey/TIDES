@@ -6,18 +6,18 @@ test_that("sd_bounds_sample() attains the bound and the mean", {
     expect_length(smax, n); expect_length(smin, n)
     expect_equal(mean(smax), mean); expect_equal(mean(smin), mean)
     expect_equal(sd(smax), sd_bounds(l = l, u = u, n = n, mean = mean)$max_sd, tolerance = 1e-6)
-    expect_equal(sd(smin), sd_bounds(l = l, u = u, n = n, mean = mean, Z = "quasiinteger")$min_sd,
+    expect_equal(sd(smin), sd_bounds(l = l, u = u, n = n, mean = mean, granularity = "quasiinteger")$min_sd,
                  tolerance = 1e-6)
   }
 })
 
-test_that("Z = 'integer' yields an all-integer sample and needs a GRIM mean", {
-  x <- sd_bounds_sample(1, 7, 30, 89/30, "max", Z = "integer")
+test_that("granularity = 'integer' yields an all-integer sample and needs a GRIM mean", {
+  x <- sd_bounds_sample(1, 7, 30, 89/30, "max", granularity = "integer")
   expect_true(all(x == round(x)))
-  expect_error(sd_bounds_sample(1, 7, 30, 2.97, "max", Z = "integer"))  # not GRIM
+  expect_error(sd_bounds_sample(1, 7, 30, 2.97, "max", granularity = "integer"))  # not GRIM
 })
 
 test_that("edge cases: mean at a limit gives SD 0", {
-  expect_equal(sd(sd_bounds_sample(1, 7, 10, 1, "max")), 0)
+  sd(sd_bounds_sample(1, 7, 10, 1, "max")) |> expect_equal(0)
   expect_equal(sd(sd_bounds_sample(1, 7, 10, 4, "min")), 0)  # whole-number mean
 })
