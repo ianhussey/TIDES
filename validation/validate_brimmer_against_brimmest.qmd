@@ -128,7 +128,7 @@ tibble(design = c("n=4 on 1-5", "n=5 on 0-3", "n=6 on 1-4"), agrees = brute_ok) 
 ```{r oracle-closure, eval=has_unsum}
 # (ii) CLOSURE: an independent reconstruction algorithm in another package
 n_c <- 9; l_c <- 1; u_c <- 5; d_c <- 1
-um_c <- umbrella_data(n = n_c, l = l_c, u = u_c, digits = d_c, Z = "integer")
+um_c <- umbrella_data(n = n_c, l = l_c, u = u_c, digits = d_c, granularity = "integer")
 cert_c <- brimmest(l = l_c, u = u_c, n = n_c, mean = um_c$mean, sd = um_c$sd,
                   digits = d_c)
 
@@ -161,7 +161,7 @@ cells whose mean fails GRIM.
 set.seed(1)
 l_e <- 1; u_e <- 5; n_e <- 12; d_e <- 1
 
-um_e <- umbrella_data(n = n_e, l = l_e, u = u_e, digits = d_e, Z = "integer")
+um_e <- umbrella_data(n = n_e, l = l_e, u = u_e, digits = d_e, granularity = "integer")
 grid_e <- expand_grid(mean = round(seq(l_e, u_e, by = 10^-d_e), d_e),
                       sd   = round(seq(0, 2.1, by = 10^-d_e), d_e)) |>
   left_join(um_e[, c("mean", "sd", "consistent")], by = c("mean", "sd")) |>
@@ -170,8 +170,8 @@ grid_e <- expand_grid(mean = round(seq(l_e, u_e, by = 10^-d_e), d_e),
 
 grid_e$brimmer_verdict <- vapply(seq_len(nrow(grid_e)), function(i) {
   isTRUE(brimmer(l = l_e, u = u_e, n = n_e,
-                 mean = grid_e$mean[i], mean_digits = d_e,
-                 sd = grid_e$sd[i], sd_digits = d_e, Z = "integer")$consistent)
+                 mean = grid_e$mean[i], digits_mean = d_e,
+                 sd = grid_e$sd[i], digits_sd = d_e, granularity = "integer")$consistent)
 }, logical(1))
 
 check(all(grid_e$grid_verdict == grid_e$brimmer_verdict),
@@ -207,7 +207,7 @@ sweep_one <- function(l, u, n, digits) {
   grid <- expand_grid(mean = round(seq(l, u, by = step), digits),
                       sd   = round(seq(0, ceiling(ceiling_sd / step) * step, by = step), digits))
 
-  um <- umbrella_data(n = n, l = l, u = u, digits = digits, Z = "integer") |>
+  um <- umbrella_data(n = n, l = l, u = u, digits = digits, granularity = "integer") |>
     select(mean, sd, in_bounds, grimmer, consistent)
 
   g <- grid |>
@@ -343,7 +343,7 @@ the sweep must show that.
 ```{r rounding}
 round_check <- function(rules) {
   n <- 12; l <- 0; u <- 6; d <- 1
-  um <- umbrella_data(n = n, l = l, u = u, digits = d, Z = "integer")
+  um <- umbrella_data(n = n, l = l, u = u, digits = d, granularity = "integer")
   ce <- brimmest(l = l, u = u, n = n, mean = um$mean, sd = um$sd, digits = d,
                 rounding = rules)
   tibble(rules = paste(rules, collapse = " + "),
@@ -358,8 +358,8 @@ bind_rows(round_check("half_up"), round_check("half_down"),
 ```{r rounding-witness}
 # a real sample whose report is reachable ONLY when halves round down
 x_w <- c(rep(0, 9), 1, 1, 1)
-w_up   <- brimmest(l = 0, u = 6, n = 12, mean = 0.2, sd = 0.5, digits = 1, rounding = "half_up")
-w_both <- brimmest(l = 0, u = 6, n = 12, mean = 0.2, sd = 0.5, digits = 1)
+w_up   <- brimmest(l = 0, u = 6, n = 12, mean = 0.2, sd = 0.5, digits_mean = 1, digits_sd = 1, rounding = "half_up")
+w_both <- brimmest(l = 0, u = 6, n = 12, mean = 0.2, sd = 0.5, digits_mean = 1, digits_sd = 1)
 
 check(!w_up$possible && w_both$possible,
       "narrowing the rule set can wrongly reject a real sample")
@@ -380,7 +380,7 @@ agree about that grid, in both sum-scored and mean-scored form.
 
 ```{r scoring}
 scoring_one <- function(scoring, n_items, l, u, n, digits) {
-  um <- umbrella_data(n = n, l = l, u = u, digits = digits, Z = "integer",
+  um <- umbrella_data(n = n, l = l, u = u, digits = digits, granularity = "integer",
                       scoring = scoring, n_items = n_items)
   ce <- brimmest(l = l, u = u, n = n, mean = um$mean, sd = um$sd, digits = digits,
                 scoring = scoring, n_items = n_items)
@@ -428,7 +428,7 @@ mi <- tibble(
   value = c(length(x_mi), sprintf("%.4f", mean(x_mi)), sprintf("%.4f", sd(x_mi)),
             "2.2, 0.2",
             as.character(brimmest(l = 1, u = 5, n = 10, mean = 2.2, sd = 0.2,
-                                 digits = 1, scoring = "meanscored", n_items = 2)$possible),
+                                 digits_mean = 1, digits_sd = 1, scoring = "meanscored", n_items = 2)$possible),
             as.character(as.logical(grimmer(x = 2.2, sd = 0.2, n = 10, digits_x = 1,
                                             digits_sd = 1, items = 2))),
             as.character(as.logical(grimmer(x = 4.3, sd = 0.5, n = 10, digits_x = 1,
@@ -469,8 +469,8 @@ witness_designs <- list(
 witnesses <- map_dfr(witness_designs, function(w) {
   n <- length(w$x)
   m_r <- round_up(mean(w$x), w$d); s_r <- round_up(sd(w$x), w$d)
-  b <- brimmer(l = w$l, u = w$u, n = n, mean = m_r, mean_digits = w$d,
-               sd = s_r, sd_digits = w$d, Z = "integer")
+  b <- brimmer(l = w$l, u = w$u, n = n, mean = m_r, digits_mean = w$d,
+               sd = s_r, digits_sd = w$d, granularity = "integer")
   tibble(n = n, scale = sprintf("%d-%d", w$l, w$u),
          reported = sprintf("%.*f, %.*f", w$d, m_r, w$d, s_r),
          brimmer_consistent = isTRUE(b$consistent),
@@ -503,7 +503,7 @@ That requires exhibiting the enumerated configuration that sits exactly on each
 bound.
 
 **The POMP transforms and derived builders.** `pomp_sd_parity` and
-`pomp_sd_sharp`, `brimmer_multiple()`, `sd_bounds_curve()` and `plot_*()` are
+`pomp_sd_sharp`, `brimmer_map()`, `sd_bounds_curve()` and `plot_*()` are
 verified by identity rather than by oracle.
 
 **The gap-ladder threshold**, which bounds how close to the ceiling a blind-spot

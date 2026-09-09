@@ -4,7 +4,7 @@
 \alias{is_grim_consistent}
 \title{Is a mean GRIM-consistent?}
 \usage{
-is_grim_consistent(mean, n, tol = 1e-09)
+is_grim_consistent(mean, n, tol = TOLERANCE)
 }
 \arguments{
 \item{mean}{Numeric scalar, the (exact) mean.}

@@ -9,7 +9,7 @@ umbrella_data(
   l,
   u,
   digits = 2,
-  Z = "integer",
+  granularity = "integer",
   scoring = "singleitem",
   n_items = 1,
   alpha = NULL,
@@ -23,37 +23,32 @@ umbrella_data(
 
 \item{digits}{Integer, reported decimal places (grid step \code{10^-digits}).}
 
-\item{Z}{granularity (default \code{"integer"}).}
+\item{granularity}{Granularity (default \code{"integer"}).}
 
 \item{scoring, n_items}{As in \code{\link[=sd_bounds]{sd_bounds()}}.}
 
-\item{alpha}{Optional reported Cronbach's alpha; when supplied the bounds each
-cell is tested against are the alpha-conditional ones, so the grid shows the
-jointly GRIM-, GRIMMER- and alpha-consistent tuples.}
+\item{alpha}{Optional reported Cronbach's alpha; when supplied the bounds
+each cell is tested against are the alpha-conditional ones.}
 
 \item{rounding}{Rounding rule for mean and SD (default \code{"up_or_down"}).}
 }
 \value{
-A data.frame: \code{mean}, \code{sd}, \code{min_sd}, \code{max_sd}, \code{in_bounds},
-\code{grimmer}, \code{consistent}. \code{grimmer} is evaluated only for SDs inside the
-sharp bounds (elsewhere the tuple is already inconsistent and \code{grimmer}
-is \code{NA}); GRIM-inconsistent means are pruned before any SD is tested,
-which is why they are absent from the grid.
+A tibble: \code{mean}, \code{sd}, \code{min_sd}, \code{max_sd}, \code{in_bounds}, \code{grimmer},
+\code{consistent}. \code{grimmer} is evaluated only for SDs inside the sharp bounds;
+GRIM-inconsistent means are pruned before any SD is tested, which is why
+they are absent from the grid.
 }
 \description{
 For each reported mean on the \code{10^-digits} grid over \verb{[l, u]}, computes the
 SD-bounds envelope once, then evaluates every reported SD on the same grid
 from 0 up to that mean's ceiling, tagging each \verb{(mean, sd)} cell with the
-bounds-overlap and (under \code{Z = "integer"}) GRIMMER verdicts. This returns the
-FULL grid — feasible means x candidate SDs — with verdict columns, rather
-than only the passing tuples, so the plotting layer can render failures as
-well as the passing "umbrella".
+bounds-overlap and (under \code{granularity = "integer"}) GRIMMER verdicts. This
+returns the FULL grid — feasible means x candidate SDs — so the plotting
+layer can render failures as well as the passing "umbrella".
 }
 \examples{
 # the full grid of reportable (mean, sd) pairs for a small design
-# (a 3-point scale at 1 decimal place, to keep the example quick)
 grid <- umbrella_data(n = 12, l = 1, u = 3, digits = 1)
-head(grid)
 
 # how many pairs survive every test
 table(grid$consistent)

@@ -1,6 +1,6 @@
 Package: strait
 Title: Bounds Checks for Reported Summary Statistics
-Version: 0.4.10
+Version: 0.5.0
 Authors@R:
     person("Ian", "Hussey", , "ian.hussey@unibe.ch", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8906-7559"))
@@ -10,18 +10,25 @@ BugReports: https://github.com/ianhussey/strait/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Depends:
     R (>= 4.1)
 Imports:
-    ggplot2,
-    scrutiny
+    cli,
+    dplyr (>= 1.1.0),
+    ggplot2 (>= 3.4.0),
+    purrr (>= 1.0.0),
+    rlang,
+    roundwork,
+    scrutiny (>= 1.0.0),
+    tibble
 Suggests:
     knitr,
     rmarkdown,
     kableExtra,
     spelling,
     testthat (>= 3.0.0),
+    tidyr,
     unsum
 VignetteBuilder: knitr
 Language: en-GB

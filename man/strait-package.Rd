@@ -6,25 +6,24 @@
 \alias{strait-package}
 \title{strait: Truncation-Induced Dependency among Summary Statistics}
 \description{
-A forensic meta-science / trustworthiness-assessment toolkit for checking
-whether reported means, standard deviations and sample sizes measured on a
-bounded (truncated) scale are mutually consistent. When a measure has a known
-minimum and maximum, the mean it can take constrains the standard deviation
-that is arithmetically possible: the two summary statistics are dependent.
-\code{sd_bounds()} computes the smallest and largest sample SD consistent
-with a chosen set of constraints (scale limits or attained extremes, sample
-size, mean, granularity, and a reported Cronbach's alpha), in closed form.
-\code{brimmer()} turns those bounds into a report-level consistency
-verdict and its percent-of-maximum-possible (POMP) transforms;
-\code{brimmer_multiple()} applies it across a data frame. Companion
-functions trace the feasible envelope (\code{sd_bounds_curve()}), build the
-jointly GRIM-, GRIMMER- and bounds-consistent grid (\code{umbrella_data()}),
-and visualise both on the native and POMP scales (\code{plot_sd_bounds()},
-\code{plot_sd_bounds_pomp()}, \code{plot_umbrella()}).
+A forensic meta-science toolkit for checking whether reported means,
+standard deviations and sample sizes measured on a bounded (truncated) scale
+are mutually consistent. When a measure has a known minimum and maximum, the
+mean it can take constrains the standard deviation that is arithmetically
+possible: the two summary statistics are dependent.
+}
+\details{
+\code{sd_bounds()} computes the smallest and largest sample SD consistent with a
+chosen set of constraints, in closed form. \code{brimmer()} turns those bounds
+into a report-level verdict and \code{brimmer_map()} applies it across a data
+frame; \code{brimmest()} settles a reported tuple exactly. Companion functions
+trace the feasible envelope (\code{sd_bounds_curve()}), build the jointly GRIM-,
+GRIMMER- and bounds-consistent grid (\code{umbrella_data()}), and visualise both
+(\code{plot_sd_bounds()}, \code{plot_sd_bounds_pomp()}, \code{plot_umbrella()}).
 }
 \seealso{
-The package README and vignette (\code{vignette("strait")}) for a
-worked example and the method background.
+The package README and \code{vignette("strait")} for a worked example
+and the method background.
 }
 \author{
 \strong{Maintainer}: Ian Hussey \email{ian.hussey@unibe.ch} (\href{https://orcid.org/0000-0001-8906-7559}{ORCID})

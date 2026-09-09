@@ -13,25 +13,6 @@ either name.
 
 ## R CMD check results
 
-0 errors | 0 warnings | 2 notes.
+0 errors | 0 warnings | 1 note.
 
 * "New submission" — expected for a first submission.
-* "Skipping checking HTML validation: 'tidy' doesn't look like recent enough
-  HTML Tidy" — a property of the HTML Tidy binary on the local machine, not of
-  the package.
-
-## Notes for the reviewer
-
-* The package contains no compiled code. It writes no files, and does not
-  modify the user's options, graphics parameters or working directory.
-* The granularity tests GRIM and GRIMMER are deferred to the `scrutiny`
-  package rather than reimplemented. `scrutiny` and `ggplot2` are the only
-  dependencies.
-* All exported functions have running examples. Two examples in
-  `plot_sd_region()` that enumerate the attainable (mean, SD) lattice are
-  wrapped in `\donttest{}`; they complete in a few seconds and pass under
-  `--run-donttest`.
-* `Language` is `en-GB`. Domain terms, cited author surnames and possessive
-  forms that the spell checker does not recognise are recorded in
-  `inst/WORDLIST`, so `spelling::spell_check_package()` reports nothing.
-* The reference in the Description field is given as `Authors (year) <doi:...>`.

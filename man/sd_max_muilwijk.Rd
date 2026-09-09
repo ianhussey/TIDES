@@ -17,15 +17,14 @@ sd_max_muilwijk(mean, n, lower, upper)
 Numeric vector, the Muilwijk / Bhatia-Davis maximum sample SD.
 }
 \description{
-The mean-conditional ceiling \code{sqrt(n/(n-1)) * sqrt((upper - mean)(mean - lower))},
-due to Muilwijk (1966) and rediscovered by Bhatia and Davis (2000). It is the
-smooth arch obtained by allowing fractional counts at the two limits, so it is
-\emph{not} sharp: the sharp ceiling applies the count-parity correction and is
-\code{\link[=sd_max_structure_s]{sd_max_structure_s()}}, which never exceeds this. Retained because it is the
-form most often cited in the literature and is useful as a reference curve.
+The mean-conditional ceiling
+\code{sqrt(n/(n-1)) * sqrt((upper - mean)(mean - lower))}, due to Muilwijk (1966)
+and rediscovered by Bhatia and Davis (2000). It is the smooth arch obtained
+by allowing fractional counts at the two limits, so it is \emph{not} sharp: the
+sharp ceiling applies the count-parity correction and is
+\code{\link[=sd_max_structure_s]{sd_max_structure_s()}}, which never exceeds this.
 }
 \examples{
-# the smooth arch, highest at the scale midpoint
 sd_max_muilwijk(mean = c(2, 4, 6), n = 30, lower = 1, upper = 7)
 
 # it is not sharp: the parity-corrected ceiling never exceeds it

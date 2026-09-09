@@ -24,10 +24,10 @@ Numeric length-2 vector, the closed feasible mean interval.
 }
 \description{
 Walls admit any mean in \verb{[lower, upper]}. Each attained extreme pins one
-observation and narrows the band: both attained gives
-\verb{[a + W/n, b - W/n]}; an attained maximum with (at most) a walled minimum
-gives \verb{[lower + (b - lower)/n, b]} (and the mirror for an attained
-minimum). \code{-Inf}/\code{Inf} when a side is absent.
+observation and narrows the band: both attained gives \verb{[a + W/n, b - W/n]};
+an attained maximum with (at most) a walled minimum gives
+\verb{[lower + (b - lower)/n, b]}, and the mirror for an attained minimum.
+\code{-Inf}/\code{Inf} when a side is absent.
 }
 \examples{
 # walls alone admit any mean on the scale
@@ -37,6 +37,8 @@ feasible_mean_band(lower = 1, upper = 7, n = 30)
 feasible_mean_band(lower = 1, upper = 7, upper_attained = TRUE, n = 30)
 
 # both extremes attained narrows the band at each end
-feasible_mean_band(lower = 1, upper = 7, lower_attained = TRUE,
-                   upper_attained = TRUE, n = 30)
+feasible_mean_band(
+  lower = 1, upper = 7, lower_attained = TRUE,
+  upper_attained = TRUE, n = 30
+)
 }

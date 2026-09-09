@@ -16,9 +16,9 @@ Numeric vector, the minimum sample SD at each mean.
 }
 \description{
 All observations on the two integers adjacent to the mean (Pesant & Regin
-2005; Bernoulli form). Range-free. Defined only at
-GRIM-consistent means; the caller is responsible for that check (see
-\code{\link[=is_grim_consistent]{is_grim_consistent()}}), otherwise use \code{\link[=sd_min_quasi_integer]{sd_min_quasi_integer()}}.
+2005; Bernoulli form). Range-free. Defined only at GRIM-consistent means;
+the caller is responsible for that check (see \code{\link[=is_grim_consistent]{is_grim_consistent()}}),
+otherwise use \code{\link[=sd_min_quasi_integer]{sd_min_quasi_integer()}}.
 }
 \examples{
 # zero at a whole-number mean, largest half way between two integers

@@ -13,8 +13,8 @@ band_polygon(d, by)
 \item{by}{The mean-grid spacing of \code{d}, used to tell a gap from jitter.}
 }
 \value{
-A long-format data frame with \code{mean}, \code{y} and a \code{ring} id, ready for
-\code{geom_polygon(aes(group = ring))}, or \code{NULL} if no row is finite.
+A long-format tibble with \code{mean}, \code{y} and a \code{ring} id, ready for
+\code{geom_polygon(aes(group = ring))}. Zero rows if no row of \code{d} is finite.
 }
 \description{
 Converts a \verb{(mean, lo, hi)} band into one or more closed polygons, so that a
@@ -24,29 +24,30 @@ region can be drawn as a ring rather than as the area between two curves.
 Drawing a band with \code{ggplot2::geom_ribbon()} assumes the band exists at every
 mean. Some constraint sets break that assumption: with a reported Cronbach's
 alpha there are stretches near each scale limit where no composite satisfies
-the constraints at all, and \code{sd_region_data()} returns \code{NA} there. A ribbon
-simply draws nothing across such a gap. If the plot shades the \emph{feasible}
-region the gap is merely invisible; if it shades the \emph{infeasible} region — as
+the constraints at all, and \code{\link[=sd_region_data]{sd_region_data()}} returns \code{NA} there. A ribbon
+draws nothing across such a gap. If the plot shades the \emph{feasible} region the
+gap is merely invisible; if it shades the \emph{infeasible} region — as
 \code{\link[=plot_sd_bounds]{plot_sd_bounds()}} and \code{\link[=plot_sd_region]{plot_sd_region()}} do by default — the gap becomes an
 unshaded bar, which asserts that any SD whatsoever is possible at those
 means. That is the one thing such a figure must not say.
 
 Rings avoid this by construction: shade the whole panel, knock the rings out,
 and stroke their outlines. Anywhere the band is undefined stays shaded
-because nothing was knocked out of it, rather than because the code
-remembered to special-case it. A ring also closes itself, so a region ending
-mid-scale gets a vertical edge instead of two curves trailing off.
+because nothing was knocked out of it. A ring also closes itself, so a region
+ending mid-scale gets a vertical edge instead of two curves trailing off.
 
 Runs are split wherever consecutive means are more than \code{1.5 * by} apart,
 which distinguishes a genuine gap from floating-point jitter in \code{seq()}. A
 run of a single row becomes a zero-area ring, which draws nothing visible;
-these are left in rather than dropped, since whether an isolated feasible
-point should be shown is the caller's decision.
+these are left in, since whether an isolated feasible point should be shown
+is the caller's decision.
 }
 \examples{
 # a reported alpha leaves stretches near each limit where no composite exists
-d <- sd_region_data(0, 3, 7, rule = "alpha", n_items = 2, alpha = 0.70,
-                    by = 0.001)
+d <- sd_region_data(
+  0, 3, 7,
+  rule = "alpha", n_items = 2, alpha = 0.70, by = 0.001
+)
 sum(is.na(d$lo))
 
 # the feasible region is therefore three rings, not one band

@@ -11,11 +11,11 @@ sd_bounds(
   b = NULL,
   n = NULL,
   mean = NULL,
-  mean_digits = NULL,
+  digits_mean = NULL,
   sd = NULL,
-  sd_digits = NULL,
+  digits_sd = NULL,
   rounding = NULL,
-  Z = c("continuous", "integer", "quasiinteger"),
+  granularity = c("continuous", "integer", "quasiinteger"),
   scoring = c("singleitem", "sumscored", "meanscored"),
   n_items = 1,
   alpha = NULL
@@ -30,41 +30,35 @@ sd_bounds(
 
 \item{mean}{Numeric scalar or NULL, the reported sample mean.}
 
-\item{mean_digits}{Integer scalar or NULL, decimal places of the reported
+\item{digits_mean}{Integer scalar or NULL, decimal places of the reported
 mean (required with \code{rounding}).}
 
-\item{sd}{Numeric scalar or NULL, the reported sample SD (verdict columns
-only; never affects the bounds).}
+\item{sd}{Numeric scalar or NULL, the reported sample SD.}
 
-\item{sd_digits}{Integer scalar or NULL, decimal places of the reported SD
-(required for GRIMMER and for interval-based \code{sd_in_bounds} when
-\code{rounding} is set).}
+\item{digits_sd}{Integer scalar or NULL, decimal places of the reported SD.}
 
-\item{rounding}{NULL (mean is exact) or a rounding/truncation rule; see
+\item{rounding}{NULL (mean is exact) or a rounding rule; see
 \code{\link[=unround_interval]{unround_interval()}}.}
 
-\item{Z}{"continuous" (default), "integer", or "quasiinteger".}
+\item{granularity}{"continuous" (default), "integer", or "quasiinteger".}
 
 \item{scoring}{"singleitem" (default), "sumscored", or "meanscored".}
 
-\item{n_items}{Positive whole number of response items (default 1). Must be
-1 for \code{scoring = "singleitem"}.}
+\item{n_items}{Positive whole number of response items (default 1).}
 
-\item{alpha}{Numeric scalar or NULL, reported Cronbach's alpha (requires
-\code{scoring = "sumscored"} or \code{"meanscored"}).}
+\item{alpha}{Numeric scalar or NULL, reported Cronbach's alpha.}
 }
 \value{
-A one-row data.frame: \code{min_sd}, \code{max_sd} (Inf if unbounded),
+A one-row tibble: \code{min_sd}, \code{max_sd} (\code{Inf} if unbounded),
 \code{feasible} (FALSE when the constraint set admits no sample, with
-\code{min_sd}/\code{max_sd} NA), \code{min_rule}, \code{max_rule} (which bound binds),
-\code{grim}, \code{grimmer} (scrutiny's verdicts; NA when not applicable),
-\code{sd_in_bounds} (NA when no \code{sd} supplied), \code{note}.
+\code{min_sd}/\code{max_sd} \code{NA}), \code{min_rule}, \code{max_rule}, \code{grim}, \code{grimmer}
+(scrutiny's verdicts; \code{NA} when not applicable), \code{sd_in_bounds}, \code{note}.
 }
 \description{
 Computes the smallest and largest sample standard deviations consistent with
 whichever constraints are supplied, following the nested framework and the
 attained-extremes extensions of the STRAIT article. All constraints default
-to NULL; supplying more of them can only narrow the bounds. With none
+to \code{NULL}; supplying more of them can only narrow the bounds. With none
 supplied the only bound is \verb{0 <= s < Inf}.
 }
 \details{
@@ -73,81 +67,48 @@ Constraint semantics:
 \item \code{l}, \code{u} — logical scale limits (walls): observations lie in \verb{[l, u]} but
 need not touch either limit.
 \item \code{a}, \code{b} — observed extremes (attained): at least one observation equals
-each. \code{a} supersedes \code{l} and \code{b} supersedes \code{u} (a wall beyond an attained
-extreme is vacuous). Attainment leaves ceilings unchanged but creates
-nonzero floors.
-\item \code{n} — sample size (required for any mean-conditional bound).
-\item \code{mean}, \code{mean_digits} — the reported mean, numeric, with its number of
-reported decimal places. This mirrors scrutiny's post-string API (numeric
-\code{x} plus \code{digits_x}); a character-parsing wrapper can be layered above via
-\code{\link[=infer_digits]{infer_digits()}}, but is not required here. With \code{rounding = NULL} the
-mean is treated as exact and \code{mean_digits} is ignored.
-\item \code{rounding} — NULL (mean exact) or one of \code{"up_or_down"}, \code{"up"},
-\code{"down"}, \code{"even"}, \code{"ceiling"}, \code{"floor"}, \code{"trunc"}, \code{"anti_trunc"}
-(see \code{\link[=unround_interval]{unround_interval()}}; requires \code{mean_digits}). The returned bounds
-are then the ENVELOPE over all exact means consistent with the report,
-intersected with the feasible mean band. Under \code{Z = "integer"} the
-envelope enumerates the GRIM-consistent means in the interval exactly.
-\item \code{sd}, \code{sd_digits} — optionally, the reported SD and its decimal places.
-The SD never changes the bounds; it enables the report-consistency
-columns: \code{sd_in_bounds} (does the SD's own rounding interval overlap
-\verb{[min_sd, max_sd]}?) and, under \code{Z = "integer"} with \code{rounding} set, the
+each. \code{a} supersedes \code{l} and \code{b} supersedes \code{u}. Attainment leaves
+ceilings unchanged but creates nonzero floors.
+\item \code{mean}, \code{digits_mean} — the reported mean with its number of reported
+decimal places, mirroring scrutiny's numeric-plus-digits API. With
+\code{rounding = NULL} the mean is treated as exact and \code{digits_mean} is
+ignored.
+\item \code{rounding} — \code{NULL} (mean exact) or a rule from \code{\link[=unround_interval]{unround_interval()}}. The
+returned bounds are then the envelope over all exact means consistent with
+the report, intersected with the feasible mean band.
+\item \code{sd}, \code{digits_sd} — the reported SD never changes the bounds; it enables
+\code{sd_in_bounds} and, under \code{granularity = "integer"} with \code{rounding}, the
 GRIMMER verdict.
-\item \code{Z} — granularity: \code{"continuous"} (none; the default), \code{"integer"} (all
-observations on the grid), or \code{"quasiinteger"} (all but one on the grid;
-defined at every mean, the GRIM-free relaxation). For mean-scored data the
-grid is the 1/\code{n_items} mean-score lattice, not the integers.
-\item \code{scoring}, \code{n_items} — how the \code{n_items} response items enter the scale.
-\code{"singleitem"} (default, requires \code{n_items = 1}): observations are single
-integer responses. \code{"sumscored"}: observations are sums of \code{n_items}
-integer items, so still integer-gridded; \code{n_items} is used only to size a
-reported \code{alpha}. \code{"meanscored"}: observations are means of \code{n_items}
-integer items, so they sit on a 1/\code{n_items} grid; \code{n_items} sets that
-granularity (and, with \code{alpha}, doubles as the composite item count).
-\item \code{alpha} — reported Cronbach's alpha of the composite; requires
-\code{scoring = "sumscored"} or \code{"meanscored"} (a single item has no internal
-consistency) and \code{l}, \code{u}, \code{mean}, \code{n}. For \code{"sumscored"}, \code{l}, \code{u}, \code{mean}
-are in SUM-score units; for \code{"meanscored"}, in mean-score units. Not
-combinable with \code{a}/\code{b} (open problem).
+\item \code{granularity} — \code{"continuous"} (none; the default), \code{"integer"} (all
+observations on the grid), or \code{"quasiinteger"} (all but one; defined at
+every mean, the GRIM-free relaxation).
+\item \code{scoring}, \code{n_items} — \code{"singleitem"} (default, requires \code{n_items = 1});
+\code{"sumscored"} (observations are sums of \code{n_items} integer items, still
+integer-gridded); \code{"meanscored"} (observations sit on a \code{1/n_items} grid).
+\item \code{alpha} — reported Cronbach's alpha; requires \code{scoring = "sumscored"} or
+\code{"meanscored"} plus \code{l}, \code{u}, \code{mean}, \code{n}. Not combinable with \code{a}/\code{b}.
 }
 
-GRIM and GRIMMER verdicts are DEFERRED to the scrutiny package
-(\code{scrutiny::grim()}, \code{scrutiny::grimmer()}) rather than reimplemented:
-under \code{Z = "integer"} with \code{rounding} set, the \code{grim} column carries
-scrutiny's verdict on the mean and (when \code{sd} is supplied) the \code{grimmer}
-column scrutiny's verdict on the (mean, sd) pair. The bounds themselves are
-computed from this package's own enumeration of GRIM-consistent means; when
-scrutiny's verdict disagrees with that enumeration the disagreement is
-surfaced in \code{note}. Divergences are expected in known edge cases: scrutiny's
-GRIM/GRIMMER have documented floating-point boundary bugs (false passes
-under \code{rounding = "up"}; false flags, including under the default rounding,
-when a candidate sum sits exactly on an interval endpoint), so verify such a
-mismatch against a full enumeration before attributing it to the bounds.
+GRIM and GRIMMER verdicts are deferred to \code{\link[scrutiny:grim]{scrutiny::grim()}} and
+\code{\link[scrutiny:grimmer]{scrutiny::grimmer()}} rather than reimplemented. The bounds themselves come
+from this package's own enumeration of GRIM-consistent means; a disagreement
+between the two is surfaced in \code{note} rather than resolved, since scrutiny
+has documented floating-point boundary cases.
 }
 \examples{
-sd_bounds()                                     # 0 <= s < Inf
-sd_bounds(l = 1, u = 5)                         # range-only ceiling
-sd_bounds(l = 1, u = 5, n = 9)                  # parity ceiling
-sd_bounds(l = 1, u = 5, n = 9, mean = 2)        # sharp mean-conditional
-sd_bounds(l = 1, u = 5, n = 9, mean = 2.44, Z = "quasiinteger")
-sd_bounds(a = 2, b = 4, n = 9, mean = 2.44, Z = "integer")   # attained
-sd_bounds(l = 1, b = 4, n = 9, mean = 3.5, Z = "integer")    # mixed
+sd_bounds() # 0 <= s < Inf
+sd_bounds(l = 1, u = 5, n = 9, mean = 2) # sharp mean-conditional
+sd_bounds(a = 2, b = 4, n = 9, mean = 2.44, granularity = "integer")
 
-# reported mean rounded to 2 dp: envelope over [2.965, 2.975];
-# GRIM verdict deferred to scrutiny
-sd_bounds(l = 1, u = 7, n = 30, mean = 2.97, mean_digits = 2,
-          rounding = "up_or_down", Z = "integer")
-# with a reported SD: adds scrutiny's GRIMMER verdict and the bounds check
-sd_bounds(l = 1, u = 7, n = 30, mean = 2.97, mean_digits = 2,
-          sd = 2.83, sd_digits = 2, rounding = "up_or_down", Z = "integer")
-# truncated reporting
-sd_bounds(l = 1, u = 7, n = 30, mean = 2.97, mean_digits = 2,
-          rounding = "trunc", Z = "quasiinteger")
+# a mean rounded to 2 dp: envelope over [2.965, 2.975]
+sd_bounds(
+  l = 1, u = 7, n = 30, mean = 2.97, digits_mean = 2,
+  rounding = "up_or_down", granularity = "integer"
+)
 
 # sum-scored 3-item composite (l, u, mean in sum units) with alpha
-sd_bounds(l = 3, u = 15, n = 20, mean = 9, Z = "integer",
-          scoring = "sumscored", n_items = 3, alpha = 0.8)
-# the same composite reported as an item mean (l, u, mean in mean units)
-sd_bounds(l = 1, u = 5, n = 20, mean = 3, Z = "integer",
-          scoring = "meanscored", n_items = 3, alpha = 0.8)
+sd_bounds(
+  l = 3, u = 15, n = 20, mean = 9, granularity = "integer",
+  scoring = "sumscored", n_items = 3, alpha = 0.8
+)
 }

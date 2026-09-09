@@ -4,7 +4,7 @@
 \alias{sd_bounds_alpha}
 \title{SD bounds for a k-item composite with reported Cronbach's alpha}
 \usage{
-sd_bounds_alpha(l, u, n, mean, Z, alpha, k_items)
+sd_bounds_alpha(l, u, n, mean, granularity, alpha, k_items)
 }
 \arguments{
 \item{l, u}{Numeric scalars, limits of the SUM score (composite units).}
@@ -13,7 +13,8 @@ sd_bounds_alpha(l, u, n, mean, Z, alpha, k_items)
 
 \item{mean}{Numeric scalar, sum-score mean.}
 
-\item{Z}{One of "continuous", "integer", "quasiinteger" (item-level grid).}
+\item{granularity}{One of "continuous", "integer", "quasiinteger"
+(item-level grid).}
 
 \item{alpha}{Numeric scalar, reported Cronbach's alpha, \code{alpha < 1}.}
 
@@ -25,22 +26,24 @@ List with \code{min_sd}, \code{max_sd}, \code{feasible}, \code{min_rule}, \code{
 \description{
 Bounds of the sum score's sample SD given the composite limits, n, sum-score
 mean, granularity, and a reported alpha (the STRAIT article, Appendix H).
-Ceiling: the mean-conditional ceiling divided by
-\verb{sqrt(k - (k - 1) alpha)}; under granularity, additionally the sharper
-quasi-integer \code{V_max} form, intersected with the alpha-free ceiling (alpha
-can only tighten). Floor under granularity: the alpha-amplified quasi-integer
-floor \verb{s_min / sqrt(1 - c alpha)}, sharpened for strictly integer composites
-to the exact Gini envelope of \code{\link[=sd_min_alpha_gini]{sd_min_alpha_gini()}} (positive even at
-whole-number means; Theorem H5) when that enumeration is affordable, else 0.
-The floor can exceed the ceiling for small k (a genuinely infeasible
-constraint set); this is reported rather than clipped.
+Ceiling: the mean-conditional ceiling divided by \verb{sqrt(k - (k - 1) alpha)};
+under granularity, additionally the sharper quasi-integer \code{V_max} form.
+Floor under granularity: the alpha-amplified quasi-integer floor, sharpened
+for strictly integer composites to the exact Gini envelope of
+\code{\link[=sd_min_alpha_gini]{sd_min_alpha_gini()}} when that enumeration is affordable. The floor can
+exceed the ceiling for small k (a genuinely infeasible constraint set); this
+is reported rather than clipped.
 }
 \examples{
 # a 3-item 1-5 battery, so the sum score runs 3-15
-sd_bounds_alpha(l = 3, u = 15, n = 50, mean = 9.4, Z = "continuous",
-                alpha = 0.8, k_items = 3)
+sd_bounds_alpha(
+  l = 3, u = 15, n = 50, mean = 9.4, granularity = "continuous",
+  alpha = 0.8, k_items = 3
+)
 
 # integer items lift the floor off zero and tighten the ceiling
-sd_bounds_alpha(l = 3, u = 15, n = 50, mean = 9.4, Z = "integer",
-                alpha = 0.8, k_items = 3)
+sd_bounds_alpha(
+  l = 3, u = 15, n = 50, mean = 9.4, granularity = "integer",
+  alpha = 0.8, k_items = 3
+)
 }

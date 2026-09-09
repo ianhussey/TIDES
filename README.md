@@ -38,23 +38,23 @@ For a reported mean `M`, sample size `n` and scale limits `l`, `u`, `sd_bounds()
 - scale limits `l`, `u` give the largest possible SD (observations pushed to the two extremes);
 - adding `n`, then the mean, sharpens the ceiling further;
 - **attained extremes** `a`, `b` (an observation is known to equal each) create a nonzero floor;
-- **granularity** `Z` (`"integer"` or the GRIM-free `"quasiinteger"`) adds the floor below which no discrete data can sit;
+- **granularity** `granularity` (`"integer"` or the GRIM-free `"quasiinteger"`) adds the floor below which no discrete data can sit;
 - a reported **Cronbach's alpha** tightens the bounds of a multi-item composite.
 
 The two tests mirror the GRIM / GRIMMER pair, and nest the same way:
 
-- **`brim()`** — the mean-side test. Can the reported mean be attained at all, given the scale limits, `n`, and any reported attained extremes? Bounds only, so it applies to continuous data too. Under `Z = "integer"` it also runs GRIM (deferred to `scrutiny`), but never GRIMMER.
+- **`brim()`** — the mean-side test. Can the reported mean be attained at all, given the scale limits, `n`, and any reported attained extremes? Bounds only, so it applies to continuous data too. Under `granularity = "integer"` it also runs GRIM (deferred to `scrutiny`), but never GRIMMER.
 - **`brimmer()`** — the SD-side test, nested on top of `brim()`: it applies the mean-side check and then asks whether the reported SD lies inside `[min_sd, max_sd]`.
 
 Each failure is named separately in `failed_tests`, so an out-of-range mean (`in_scale_range`) is never confused with a granularity-impossible one (`grim`):
 
 ```r
-brim(l = 1, u = 7, n = 30, mean = 3.51, mean_digits = 2, Z = "integer")
+brim(l = 1, u = 7, n = 30, mean = 3.51, digits_mean = 2, granularity = "integer")
 #>   consistent failed_tests in_scale_range  grim band_lo band_hi
 #> 1      FALSE         grim           TRUE FALSE       1       7
 ```
 
-`brimmer()` also adds Percent-Of-Maximum-Possible (POMP) transforms of the mean and SD so results from different scales can be compared on one axis. `brimmer_multiple()` applies it across a data frame.
+`brimmer()` also adds Percent-Of-Maximum-Possible (POMP) transforms of the mean and SD so results from different scales can be compared on one axis. `brimmer_map()` applies it across a data frame.
 
 `umbrella_data()` builds the full grid of reported means and SDs for a design, tagging each as consistent, GRIMMER-inconsistent or out of bounds, which `plot_umbrella()` renders as the characteristic "umbrella" of feasible values.
 
@@ -74,7 +74,7 @@ For a whole reporting grid it enumerates the exact attainable `(mean, sd)` latti
 
 ```r
 # passes the bounds, GRIM and GRIMMER, yet no integer sample produces it
-brimmest(l = 1, u = 5, n = 9, mean = 1.3, sd = 0.9, digits = 1)
+brimmest(l = 1, u = 5, n = 9, mean = 1.3, sd = 0.9, digits_mean = 1, digits_sd = 1)
 #>   mean  sd possible rules
 #> 1  1.3 0.9    FALSE
 ```
@@ -102,39 +102,39 @@ exact certification and how it compares with CLOSURE.
 library(strait)
 
 # The feasible SD range for a reported mean on a 1-5 integer scale
-sd_bounds(l = 1, u = 5, n = 30, mean = 3.2, Z = "integer")
+sd_bounds(l = 1, u = 5, n = 30, mean = 3.2, granularity = "integer")
 
 # Check a reported mean alone: is it attainable within the scale at all?
-brim(l = 1, u = 5, n = 30, mean = 3.20, mean_digits = 2, Z = "integer")
+brim(l = 1, u = 5, n = 30, mean = 3.20, digits_mean = 2, granularity = "integer")
 
 # Check a reported mean and SD (as printed in a paper: value + decimal places)
-brimmer(l = 1, u = 5, n = 30, mean = 3.20, mean_digits = 2,
-        sd = 0.80, sd_digits = 2, Z = "integer")
+brimmer(l = 1, u = 5, n = 30, mean = 3.20, digits_mean = 2,
+        sd = 0.80, digits_sd = 2, granularity = "integer")
 ```
 
 ### Checking a table of reported statistics
 
-`brimmer_multiple()` applies the check row-by-row over a data frame, taking per-row values from columns of the same name and broadcasting anything passed as a constant:
+`brimmer_map()` applies the check row-by-row over a data frame, taking per-row values from columns of the same name and broadcasting anything passed as a constant:
 
 ```r
-dat <- data.frame(
+dat <- tibble::tibble(
   mean = c(4.2, 4.2, 1.2, 1.4),
   sd   = c(0.5, 0.5, 0.5, 0.6),
   n    = c( 14,  14,  30,  35),
   u    = c(  7,   7,   5,   7)
 )
 
-brimmer_multiple(dat, l = 1, mean_digits = 1, sd_digits = 1, Z = "integer")
+brimmer_map(dat, l = 1, digits_mean = 1, digits_sd = 1, granularity = "integer")
 ```
 
 ### Visualising the feasible region
 
 ```r
 # The SD-bounds envelope for a single design, with reported points overlaid
-curve  <- sd_bounds_curve(l = 1, u = 7, n = 15, Z = "quasiinteger")
-points <- brimmer_multiple(
-  data.frame(mean = 5.07, sd = 2.92),
-  l = 1, u = 7, n = 15, mean_digits = 2, sd_digits = 2, Z = "quasiinteger")
+curve  <- sd_bounds_curve(l = 1, u = 7, n = 15, granularity = "quasiinteger")
+points <- brimmer_map(
+  tibble::tibble(mean = 5.07, sd = 2.92),
+  l = 1, u = 7, n = 15, digits_mean = 2, digits_sd = 2, granularity = "quasiinteger")
 plot_sd_bounds(curve, points = points)
 
 # The same on a standardised POMP scale so different designs can be pooled
@@ -149,12 +149,12 @@ umbrella_data(n = 14, l = 1, u = 7, digits = 2) |>
 
 | function | purpose |
 |---|---|
-| `sd_bounds(l, u, a, b, n, mean, Z, scoring, n_items, alpha, ...)` | the smallest and largest sample SD consistent with the constraints supplied, in closed form |
-| `brim(l, u, a, b, n, mean, mean_digits, Z, ...)` | the mean-side test: is the reported mean attainable within the scale limits (and, under `Z = "integer"`, GRIM)? |
+| `sd_bounds(l, u, a, b, n, mean, granularity, scoring, n_items, alpha, ...)` | the smallest and largest sample SD consistent with the constraints supplied, in closed form |
+| `brim(l, u, a, b, n, mean, digits_mean, granularity, ...)` | the mean-side test: is the reported mean attainable within the scale limits (and, under `granularity = "integer"`, GRIM)? |
 | `brimmer(...)` | the SD-side test, nested on `brim()`: turn the bounds into a consistent/inconsistent verdict with POMP transforms; defers GRIM/GRIMMER to `scrutiny` |
-| `brimmer_multiple(data, ...)` | apply `brimmer()` to each row of a data frame |
-| `brimmest(l, u, n, mean, sd, digits, ...)` | exact possible / impossible certificate for reported tuples, by analytic enumeration of the attainable lattice (no dataset reconstruction) |
-| `brimmest_multiple(data, ...)` | the same certificate across a data frame, grouping rows by design so one lattice serves them all |
+| `brimmer_map(data, ...)` | apply `brimmer()` to each row of a data frame |
+| `brimmest(l, u, n, mean, digits_mean, sd, digits_sd, ...)` | exact possible / impossible certificate for reported tuples, by analytic enumeration of the attainable lattice (no dataset reconstruction) |
+| `brimmest_map(data, ...)` | the same certificate across a data frame, grouping rows by design so one lattice serves them all |
 | `sd_bounds_curve(l, u, n, ...)` | trace the floor and ceiling of the SD across the mean (hole-free under `"quasiinteger"`) |
 | `umbrella_data(n, l, u, ...)` | build the grid of reported (mean, SD) pairs with their consistency verdicts |
 | `plot_sd_bounds(curve, ...)` | plot the SD-bounds envelope on the native scale, with reported points |
@@ -168,20 +168,6 @@ The single-purpose bound primitives (e.g. `sd_max_structure_s()`, `sd_min_quasi_
 - **A small residual blind spot at the umbrella's edge.** A handful of reported (mean, SD) tuples pass GRIM, GRIMMER *and* the SD bounds yet still have no integer-data solution. These are rare and predictably located, hugging the mean-conditional ceiling at the very top of the umbrella. The closed-form screen is *necessary but not sufficient*: it never rejects a report real integer data can produce, but it does admit these. `brimmest()` settles them exactly — see below. See also the validation document in `validation/`.
 
 ## TODO
-
-- **Do not submit to CRAN until `scrutiny` 0.6.2 is released. The current CRAN release returns wrong GRIMMER verdicts.** This is a correctness problem, not merely a slow one. Note the direction throughout: it is CRAN's **0.6.1** that is affected, not the GitHub main branch.
-
-    **The defect.** scrutiny 0.6.1's GRIMMER test 3 flags attainable values as inconsistent ([scrutiny#80](https://github.com/lhdjung/scrutiny/issues/80); it warns about this on every call). Because CRAN builds against 0.6.1, a CRAN release of `strait` would ship those false flags. On a 0–6 scale at *n* = 12 and one decimal place, 24 of 1497 grid cells differ between the two scrutiny versions — **all in the same direction**, 0.6.1 rejecting what 0.6.2 accepts, and all of them `in_bounds`, so GRIMMER alone is responsible. That is roughly a **2% false-flag rate** on legitimate reports. For a tool used to question published work, a false impossibility is the costly error.
-
-    **`brimmest()` proves 0.6.1 is the wrong one.** This is no longer an inference from two versions disagreeing. `brimmest()` enumerates the attainable lattice constructively, and at *n* = 12 on 1–5 it proves 16 tuples attainable that 0.6.1 rejects. One of them, mean 1.2 / SD 0.5, has the explicit witness `c(rep(1, 9), 2, 2, 2)` — twelve integers in range, exact mean 1.25 → "1.2", exact SD 0.4523 → "0.5" — which `unsum::closure_generate()` independently confirms with one solution.
-
-    **Three tests already detect it**, and none should be marked `skip_on_cran()`, since they are the only thing catching the upstream bug: `test-plot_sd_region.R:226` (forward-rounded attainable tuples must be a subset of the GRIMMER lattice), `test-plot_sd_region.R:237` (grid consistency count), and `test-brimmest.R:30` (the screen must never reject what `brimmest()` proves attainable). The last is the sharpest, being a contradiction of a constructive proof rather than a disagreement between heuristics.
-
-    **If a release cannot wait**, the defensive option is for `.grimmer_compat()` to detect the affected scrutiny and return `NA` rather than propagate a wrong `FALSE` — GRIMMER simply unavailable on old scrutiny, which is honest, leaving the bounds tests and `brimmest()` fully functional. That is a deliberate design decision, not a workaround to apply silently.
-
-    **Timing, secondarily.** GRIMMER on 0.6.1 also evaluates roughly **25x slower** than on 0.6.2 — 200 evaluations take 1.78s vs 0.31s, and `umbrella_data(n = 12, l = 1, u = 7, digits = 2)` takes 113s vs 4s. GRIM, the `round_*` helpers and `brimmest()` are unaffected. Examples have been sized against 0.6.1 and total ~3.5s, and both vignettes rebuild in ~142s, but the test suite runs ~520s there and emits ~39,000 warnings. The remaining hotspots are the `umbrella_data(n = 12, l = 1, u = 7, digits = 2)` call in `tests/testthat/test-builders-and-plots.R` and the `"integer"` / `"integer_alpha"` rules at `digits = 2` in `tests/testthat/test-plot_sd_region.R`.
-
-    **Exit condition.** `R/scrutiny-compat.R` dispatches between the two argument interfaces at run time, so both versions run. Once 0.6.2 reaches CRAN, the shim, the timing problem and the correctness problem all retire together in favour of `Imports: scrutiny (>= 0.6.2)`. Worth asking the `scrutiny` maintainer for that timeline.
 
 - **Revisit the phrasing of the inconsistency decisions.** `consistent` is a single Boolean over tests with very different epistemic status, and the wording should probably reflect that:
     - `in_scale_range` and `bounds` failures are *arithmetic proofs of impossibility* — no dataset with those summary statistics exists.

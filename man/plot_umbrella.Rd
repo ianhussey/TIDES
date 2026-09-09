@@ -8,10 +8,13 @@ plot_umbrella(
   umbrella,
   curve = NULL,
   title = NULL,
-  style = c("points", "tiles"),
+  style = c("points", "tiles", "contour"),
   point_colour = "black",
   point_size = NULL,
   reference_colour = "grey35",
+  line_colour = "grey30",
+  contour_by = NULL,
+  shade = c("outside", "none"),
   expand = 0.03
 )
 }
@@ -24,13 +27,24 @@ filtered by \code{consistent} when that column is present.}
 
 \item{title}{Optional plot title.}
 
-\item{style}{\code{"points"} (default) or \code{"tiles"}; see Details.}
+\item{style}{\code{"points"} (default), \code{"tiles"} or \code{"contour"}; see Details.}
 
-\item{point_colour, point_size}{Point appearance. \code{point_size} defaults to a
-value chosen from the number of points, since a size that reads well for a
-few hundred is a solid mass at twenty thousand.}
+\item{point_colour, point_size}{Point appearance, used by \code{style = "points"}.
+\code{point_size} defaults to a value chosen from the number of points, since a
+size that reads well for a few hundred is a solid mass at twenty thousand.}
 
 \item{reference_colour}{Colour of the overlaid bound curves.}
+
+\item{line_colour}{Colour of the contour outline, used by
+\code{style = "contour"}.}
+
+\item{contour_by}{Passed to \code{\link[=umbrella_contour]{umbrella_contour()}} as \code{by}: the mean spacing
+that tells a genuine gap in the umbrella from its ordinary striping. Give
+it explicitly to keep a narrow gap from being bridged.}
+
+\item{shade}{\code{"outside"} (default) greys everything the design rules out;
+\code{"none"} draws no shading at all, and leaves the contour unfilled. Applies
+to \code{"points"} and \code{"contour"}; \code{"tiles"} colours every cell already.}
 
 \item{expand}{Padding as a proportion of the scale width, as in
 \code{\link[=plot_sd_bounds]{plot_sd_bounds()}}.}
@@ -39,7 +53,7 @@ few hundred is a solid mass at twenty thousand.}
 A ggplot object.
 }
 \description{
-Renders the reportable \verb{(mean, sd)} tuples of a design, in either of two
+Renders the reportable \verb{(mean, sd)} tuples of a design, in any of three
 styles. Optionally overlays the bound curves from \code{\link[=sd_bounds_curve]{sd_bounds_curve()}}.
 }
 \details{
@@ -47,28 +61,39 @@ styles. Optionally overlays the bound curves from \code{\link[=sd_bounds_curve]{
 consistent tuples. Nothing else is drawn, because nothing else exists: every
 other cell of the grid is a value that cannot be reported. This matches the
 convention of \code{\link[=plot_sd_bounds]{plot_sd_bounds()}} and \code{\link[=plot_sd_region]{plot_sd_region()}}, where shading marks
-what is ruled out, and it makes the real structure legible — the vertical
-striping at means an integer sum can round to.
+what is ruled out, and it makes the vertical striping legible.
 
 \code{style = "tiles"} draws every cell of the reporting grid, coloured as
-consistent, GRIMMER-inconsistent, or out of bounds. That is useful for
-methods exposition, since it separates what the bounds rule out from what
-GRIMMER additionally rules out, but it inverts the emphasis: at
-\code{n = 14} on a 1-7 scale at two decimal places it spends two thirds of its ink, in the most
-saturated colour, on impossible tuples, and GRIMMER's verdict alternating
-between adjacent SDs produces interference banding that obscures the striping.
+consistent, GRIMMER-inconsistent, or out of bounds. Useful for methods
+exposition, since it separates what the bounds rule out from what GRIMMER
+additionally rules out, but it spends most of its ink on impossible tuples.
 
-Note what the points represent. The consistent set is the GRIM- and
-GRIMMER-consistent one, which is what \code{\link[=brimmer]{brimmer()}} applies. It is strictly
-larger than the set of attainable tuples, so an umbrella plot shows what the
-test admits rather than what exists; use \code{\link[=brimmest]{brimmest()}} to certify a tuple.
-The gap is not always small — 9\\% at \verb{l = 1, u = 5, n = 10}, and nearly a
-factor of three at \verb{l = 0, u = 6, n = 23} with two items.
+\code{style = "contour"} draws only the outline of the umbrella, from
+\code{\link[=umbrella_contour]{umbrella_contour()}}. Use it when the point cloud is too dense to read, when
+the figure is a backdrop for reported points, or to see the discrete
+envelope against the continuous one by passing \code{curve} as well. Being an
+envelope, it is drawn across the vertical striping rather than around it, so
+its interior claims less than the points do.
+
+The grey under \code{"points"} and \code{"contour"} is a layer, not a theme element:
+it is a rectangle over the whole panel with the feasible region knocked out
+of it, so it says "no tuple here" as data rather than as decoration. No
+theme call removes it — \code{theme_void()} strips the axes and the shading
+stays, as it must. Use \code{shade = "none"} to drop it.
+
+Note what the points represent: the GRIM- and GRIMMER-consistent set, which
+is what \code{\link[=brimmer]{brimmer()}} applies. It is strictly larger than the set of
+attainable tuples, so an umbrella plot shows what the test admits rather
+than what exists; use \code{\link[=brimmest]{brimmest()}} to certify a tuple.
 }
 \examples{
-grid <- umbrella_data(n = 12, l = 1, u = 3, digits = 1)
+grid <- umbrella_data(n = 12, l = 1, u = 3, digits = 2)
 plot_umbrella(grid, title = "n = 12, 1-3 scale")
 
-# the previous look, separating the two ways a tuple can be ruled out
+# separating the two ways a tuple can be ruled out
 plot_umbrella(grid, style = "tiles")
+
+# just the outline, with the continuous bounds dashed over it
+curve <- sd_bounds_curve(l = 1, u = 3, n = 12, by = 0.05)
+plot_umbrella(grid, curve = curve, style = "contour")
 }

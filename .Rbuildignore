@@ -1,10 +1,9 @@
-^STRAIT\.Rproj$
+^strait\.Rproj$
 ^\.Rproj\.user$
 ^doc$
 ^Meta$
 ^\.github$
 ^cran-comments\.md$
-^build\.R$
 ^old$
 ^LICENSE\.md$
 ^.*\.DS_Store$
@@ -13,3 +12,9 @@
 ^paper$
 ^app$
 ^dev$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^air\.toml$
+^TODO\.md$
+^CITATION\.cff$

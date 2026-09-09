@@ -20,8 +20,8 @@ present, is the mean-grid spacing used to tell a sampling gap from a
 genuine one under \code{shade = "outside"}; a curve built by hand, without that
 attribute, should be on a uniform grid, from which the spacing is inferred.}
 
-\item{points}{Optional data.frame with \code{mean}, \code{sd}, and (optionally)
-\code{consistent}; e.g. the output of \code{\link[=brimmer_multiple]{brimmer_multiple()}}.}
+\item{points}{Optional data frame with \code{mean}, \code{sd}, and optionally
+\code{consistent}; e.g. the output of \code{\link[=brimmer_map]{brimmer_map()}}.}
 
 \item{title}{Optional plot title.}
 
@@ -32,24 +32,21 @@ by \code{shade = "inside"}; the infeasible shading has its own fixed grey.}
 \code{"inside"} fills the feasible band.}
 
 \item{expand}{Padding around the plotted region, as a proportion of the
-scale width \code{u - l} rather than a fixed number of SD units, so that the
-margin looks the same on a 1-5 scale and a 0-100 one. Applied to both
-axes. The limits always stretch to include \code{points}, so an out-of-bounds
-report is never clipped out of view.}
+scale width. The limits always stretch to include \code{points}, so an
+out-of-bounds report is never clipped out of view.}
 }
 \value{
 A ggplot object.
 }
 \description{
 The feasible SD band (floor to ceiling) against the mean, optionally with
-reported points coloured by consistency (green/red outlined dots).
+reported points coloured by consistency.
 }
 \details{
 \code{shade = "outside"} (default) shades the infeasible region and leaves the
 feasible one clear, matching \code{\link[=plot_sd_bounds_pomp]{plot_sd_bounds_pomp()}} with
 \code{reference = "sharp"}, so the two scales read the same way: shaded means
-unreachable. \code{shade = "inside"} fills the feasible band instead, which was
-the behaviour before this argument existed.
+unreachable. \code{shade = "inside"} fills the feasible band instead.
 }
 \examples{
 curve <- sd_bounds_curve(l = 1, u = 7, n = 30, by = 0.1)
@@ -57,11 +54,10 @@ plot_sd_bounds(curve, title = "Feasible SDs, 1-7 scale, n = 30")
 
 # overlay reported values, coloured by consistency (the second is
 # above the ceiling, so it plots as inconsistent)
-reports <- data.frame(mean = c(2.97, 3.51), sd = c(2.83, 3.50))
-checked <- brimmer_multiple(reports, l = 1, u = 7, n = 30,
-                            mean_digits = 2, sd_digits = 2)
+reports <- tibble::tibble(mean = c(2.97, 3.51), sd = c(2.83, 3.50))
+checked <- brimmer_map(
+  reports,
+  l = 1, u = 7, n = 30, digits_mean = 2, digits_sd = 2
+)
 plot_sd_bounds(curve, points = checked)
-
-# the previous look, with the feasible band filled
-plot_sd_bounds(curve, points = checked, shade = "inside")
 }

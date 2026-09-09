@@ -4,15 +4,15 @@
 \alias{sd_from_ss}
 \title{Sample SD from a sum of squared deviations}
 \usage{
-sd_from_ss(ss, n)
+sd_from_ss(sum_squares, n)
 }
 \arguments{
-\item{ss}{Numeric vector, sum of squared deviations about the mean.}
+\item{sum_squares}{Numeric vector, sum of squared deviations about the mean.}
 
 \item{n}{Integer scalar, sample size.}
 }
 \value{
-\code{sqrt(pmax(0, ss) / (n - 1))}.
+\code{sqrt(pmax(0, sum_squares) / (n - 1))}.
 }
 \description{
 Sample SD from a sum of squared deviations

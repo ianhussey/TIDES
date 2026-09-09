@@ -4,7 +4,7 @@
 \alias{frac}
 \title{Fractional part, robust to floating-point dust near an integer}
 \usage{
-frac(x, tol = 1e-09)
+frac(x, tol = TOLERANCE)
 }
 \arguments{
 \item{x}{Numeric vector.}
@@ -16,14 +16,10 @@ frac(x, tol = 1e-09)
 }
 \description{
 \code{x - floor(x)}, but a value within \code{tol} of an integer (on either side) is
-snapped to \code{0}. This matters because scaling a rounded reported mean onto the
-integer grid (\code{w = m * x}, mean-scored data) can land a hair away from an
-integer — e.g. \code{round(4/3, 12) * 3 = 3.999999999999} (fractional part \code{~1})
-or \code{round(5/3, 12) * 3 = 5.000000000100} (fractional part \code{~1e-10}) — where a
-naive fractional part produces a spurious granularity floor
-\code{sqrt(d(1 - d))}. The snap is safe: the smallest legitimate on-grid
-fractional part is \code{1/n}, orders of magnitude larger than \code{tol}, so a
-genuinely off-grid mean such as \code{2.999} (fractional part \code{0.999}) is left
-untouched.
+snapped to \code{0}. Scaling a rounded reported mean onto the integer grid can
+land a hair away from an integer, where a naive fractional part produces a
+spurious granularity floor \code{sqrt(d(1 - d))}. The snap is safe: the smallest
+legitimate on-grid fractional part is \code{1/n}, orders of magnitude larger
+than \code{tol}.
 }
 \keyword{internal}

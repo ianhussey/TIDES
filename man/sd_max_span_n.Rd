@@ -16,15 +16,12 @@ Numeric scalar, the maximum sample SD.
 }
 \description{
 The mean-agnostic maximum for a given sample size: half the observations at
-each limit, with the odd-n parity correction (Popoviciu 1935 sec 4,
-Petocz 2005). Unchanged by attainment (the attaining
-configuration occupies both limits).
+each limit, with the odd-n parity correction (Popoviciu 1935 sec 4, Petocz
+2005). Unchanged by attainment, since the attaining configuration occupies
+both limits.
 }
 \examples{
 # an even n splits exactly; an odd n pays the parity correction
 sd_max_span_n(lower = 1, upper = 7, n = 30)
 sd_max_span_n(lower = 1, upper = 7, n = 31)
-
-# both sit below the n-free maximum
-sd_max_span(lower = 1, upper = 7)
 }

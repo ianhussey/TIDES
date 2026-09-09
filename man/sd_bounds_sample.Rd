@@ -10,7 +10,7 @@ sd_bounds_sample(
   n,
   mean,
   which = c("max", "min"),
-  Z = c("quasiinteger", "integer")
+  granularity = c("quasiinteger", "integer")
 )
 }
 \arguments{
@@ -22,8 +22,8 @@ sd_bounds_sample(
 
 \item{which}{\code{"max"} (default) or \code{"min"}.}
 
-\item{Z}{\code{"quasiinteger"} (default, one observation may be non-integer) or
-\code{"integer"} (requires a GRIM-consistent mean).}
+\item{granularity}{\code{"quasiinteger"} (default, one observation may be
+non-integer) or \code{"integer"} (requires a GRIM-consistent mean).}
 }
 \value{
 A numeric vector of length \code{n} whose mean is \code{mean} and whose sample
@@ -33,20 +33,20 @@ SD equals the requested bound.
 Returns a length-\code{n} sample that attains the maximum (\code{which = "max"}) or
 minimum (\code{which = "min"}) sample SD of \code{\link[=sd_bounds]{sd_bounds()}} for the given scale
 limits, sample size and mean, built directly from the closed-form attaining
-configuration (no search). This is the constructive companion to the
-closed-form \code{\link[=sd_bounds]{sd_bounds()}}: the returned sample has exactly \code{mean} as its mean
-and its SD equals the corresponding bound.
+configuration (no search). The returned sample has exactly \code{mean} as its
+mean and its SD equals the corresponding bound.
 }
 \details{
-The maximum places \code{n_l} observations at \code{l} and \code{n_u} at \code{u} with one
-remainder observation on the Structure S curve; the minimum clusters \code{n - 1}
-observations on the two integers bracketing the mean with one free remainder.
-Under the quasi-integer default the single remainder may be non-integer (the
-\verb{Z_\{n-1\}} relaxation used throughout the package); pass \code{Z = "integer"} to
-require a GRIM-consistent mean, so the whole sample is integer.
+The maximum places \code{n_lower} observations at \code{l} and \code{n_upper} at \code{u} with
+one remainder observation on the Structure S curve; the minimum clusters
+\code{n - 1} observations on the two integers bracketing the mean with one free
+remainder. Under the quasi-integer default the single remainder may be
+non-integer; pass \code{granularity = "integer"} to require a GRIM-consistent
+mean, so the whole sample is integer.
 }
 \examples{
 x <- sd_bounds_sample(l = 1, u = 7, n = 30, mean = 2.9667, which = "max")
-c(mean = mean(x), sd = sd(x))          # 2.9667 and the max-SD bound
-table(sd_bounds_sample(l = 1, u = 7, n = 30, mean = 89/30, which = "max"))
+c(mean = mean(x), sd = sd(x))
+
+table(sd_bounds_sample(l = 1, u = 7, n = 30, mean = 89 / 30, which = "max"))
 }
