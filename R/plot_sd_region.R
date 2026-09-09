@@ -573,32 +573,13 @@ plot_sd_region <- function(
           na.rm = TRUE
         )
     } else {
-      # Knock the feasible rings out of a shaded panel rather than assembling
-      # the shading around them. The alpha rules leave stretches near each
-      # limit where no composite exists and `lo`/`hi` are NA; a ribbon draws
-      # nothing there, so assembled shading would leave those means unshaded
-      # and imply every SD is possible at them. See band_polygon().
+      # The alpha rules leave stretches near each limit where no composite
+      # exists and `lo`/`hi` are NA; a ribbon draws nothing there, so assembled
+      # shading would leave those means unshaded and imply every SD is possible
+      # at them. Knocking rings out of a shaded panel keeps them shaded. See
+      # band_polygon() and .knockout_layers().
       step <- if (is.null(by)) (u - l) / 1000 else by
-      rings <- band_polygon(d, by = step)
-      p <- p +
-        ggplot2::annotate(
-          "rect",
-          xmin = -Inf,
-          xmax = Inf,
-          ymin = -Inf,
-          ymax = Inf,
-          fill = "grey10",
-          alpha = 0.12
-        )
-      if (!is.null(rings)) {
-        p <- p +
-          ggplot2::geom_polygon(
-            data = rings,
-            ggplot2::aes(x = .data$mean, y = .data$y, group = .data$ring),
-            inherit.aes = FALSE,
-            fill = "white"
-          )
-      }
+      p <- p + .knockout_layers(band_polygon(d, by = step))
     }
   }
 
@@ -652,10 +633,6 @@ plot_sd_region <- function(
       )
   }
 
-  # limits are set from the data rather than left to ggplot2, because the
-  # outside shading needs finite ones; padding is a proportion of the scale
-  # width so the margin is constant across scales of very different widths.
-  pad <- expand * (u - l)
   y_hi <- if (identical(attr(d, "type"), "points")) {
     max(d$sd, na.rm = TRUE)
   } else {
@@ -671,11 +648,7 @@ plot_sd_region <- function(
   }
 
   p +
-    ggplot2::coord_cartesian(
-      xlim = c(l - pad, u + pad),
-      ylim = c(-pad, y_hi + pad),
-      expand = FALSE
-    ) +
+    .padded_coord(l, u, y_hi, expand) +
     ggplot2::labs(x = "Mean", y = "Sample standard deviation", title = title) +
     ggplot2::theme_minimal() +
     ggplot2::theme(panel.grid.minor = ggplot2::element_blank())

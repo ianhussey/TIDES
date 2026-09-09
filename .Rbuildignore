@@ -4,7 +4,6 @@
 ^Meta$
 ^\.github$
 ^cran-comments\.md$
-^build\.R$
 ^old$
 ^LICENSE\.md$
 ^.*\.DS_Store$

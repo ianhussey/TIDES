@@ -51,10 +51,33 @@ convenience for wrappers built above this layer (digits then inferred via
 missing is an error, because trailing zeros cannot be recovered from a
 numeric.
 
+The interval itself is computed by [scrutiny::unround()] rather than here,
+so that this package and the rest of the error-detection ecosystem unround
+a report the same way. This function is the adapter: it names the endpoints
+\code{lo}/\code{hi}/\code{lo_incl}/\code{hi_incl} and returns a plain list, which is the shape
+the bounds machinery consumes, and it carries \code{digits} back out.
+
+One case differs from the hand-rolled predecessor this replaced, and
+scrutiny is the one that is right: \code{x = 0} under \code{"trunc"} or
+\code{"anti_trunc"}. Truncation toward zero has no defined direction at zero
+itself, so the old code silently took the positive branch and returned
+\verb{[0, unit)}. scrutiny returns the sign-agnostic \verb{(-unit, unit)} for
+\code{"trunc"} and the degenerate \verb{[0, 0]} for \code{"anti_trunc"}.
+
+Both consumers absorb the difference, so no verdict moves: [sd_bounds()]
+intersects the mean's interval with the feasible mean band, which clips a
+below-scale endpoint back to \code{l}, and \code{brimmest()} clamps a reported SD's
+interval to non-negative before squaring it. The wider interval is in any
+case the conservative direction — it admits more exact values behind the
+report, never fewer.
+
 [x - h, x + h)`.
 \itemize{
 \item \code{"down"} (round half down): \verb{(x - h, x + h]: R:x\%20-\%20h,\%20x\%20+\%20h)\%60.\%0A*\%20\%60\%22down\%22\%60\%20(round\%20half\%20down):\%20\%60(x\%20-\%20h,\%20x\%20+\%20h [x - h, x + h]: R:x\%20-\%20h,\%20x\%20+\%20h [x, x + unit)} for \code{x >= 0}, `(x - unit, x]: R:x,\%20x\%20+\%20unit)\%60\%20for\%20\%60x\%20\%3E=\%200\%60,\%20\%60(x\%20-\%20unit,\%20x
 [infer_digits()]: R:infer_digits()
+[scrutiny::unround()]: R:scrutiny::unround()
+[0, 0]: R:0,\%200
+[sd_bounds()]: R:sd_bounds()
 }
 }
 \examples{

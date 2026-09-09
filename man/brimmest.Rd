@@ -44,13 +44,15 @@ any of them.}
 
 \item{n_items}{Positive whole number of response items (default 1).}
 
-\item{max_cells}{Guard on the dynamic program's state space (default
-\code{2e7}); the enumeration errors rather than exhausting memory above it.}
+\item{max_cells}{Guard on the lattice enumeration's state space (default
+\code{2e7}); a design above it takes the targeted route instead, and the
+lattice errors rather than exhausting memory if asked for directly.}
 
 \item{search_budget}{Node budget for the constructive search (default
-\code{2e5}). Raising it lets the search settle more reports on its own;
-lowering it hands them to the corridor sweep sooner. The verdict is the
-same either way — only which route produces it changes.}
+\code{2e5}). Measured across 2,719,364 reporting-grid cells and six designs
+the budget was never reached, so this is a safety valve rather than a
+tuning knob; a report that does exhaust it errors rather than returning
+a guess.}
 }
 \value{
 A data.frame with one row per reported tuple: \code{mean}, \code{sd},
@@ -112,7 +114,7 @@ impossible, since the state table outgrows \code{max_cells}. A reported tuple
 pins both coordinates almost completely: the mean's rounding interval
 admits only a few integer sums, and each of those pins the sum of squares
 to a narrow window. That reduces certification to a question about one
-sample sum at a time, which is answered in three escalating steps.
+sample sum at a time, which is answered in two escalating steps.
 
 A closed-form sandwich comes first. For a given sum the achievable sums of
 squares lie between the clustered configuration and the Structure-S one,
@@ -121,15 +123,13 @@ between them is impossible on arithmetic alone. What survives goes to a
 constructive search over non-increasing samples — the partitions of the sum
 — with the same sandwich re-applied at every step to what is left to place.
 Reaching a complete sample proves possibility and produces a witness;
-exhausting the search proves impossibility. Only when neither happens
-inside \code{search_budget} does the corridor sweep run: a dynamic program
-confined to the states that can still reach a target, roughly a tenth of
-the full table.
+exhausting the search proves impossibility. The verdict is therefore exact
+in both directions whenever the search terminates, and \code{search_budget} —
+not the absence of a theorem — is the only thing that can withhold one.
 
 The practical effect is that designs the lattice refuses outright become
-answerable — a 0-63 inventory at \code{n = 50} needs a 3151 x 24801 table — and
-that the overwhelming majority of single reports are settled without any
-sweep at all.
+answerable — a 0-63 inventory at \code{n = 50} needs a 3151 x 24801 table, and
+certifies in milliseconds without one.
 }
 
 \section{Rounding and the direction of proof}{

@@ -1,7 +1,10 @@
 # The fast certification path (R/certify-sandwich.R). Its whole value is that
-# it reaches the same verdicts as the sweeping routes for less work, so most
-# of what is worth testing is agreement: with brute force where brute force is
-# affordable, and with the corridor DP where it is not.
+# it reaches the same verdicts as a sweeping route for less work, so most of
+# what is worth testing is agreement: with brute force where brute force is
+# affordable, and with the corridor DP where it is not. The corridor DP is no
+# longer shipped -- the fast path settled every cell of a 2.7M-cell sweep
+# without exhausting its budget, so the fallback was dead weight in R/ -- and
+# now lives in helper-corridor-dp.R purely as this suite's oracle.
 
 brute_states <- function(n, W) {
   grid <- as.matrix(expand.grid(rep(list(0:W), n)))
@@ -120,21 +123,21 @@ test_that("the fast path agrees with the corridor DP cell for cell", {
   }
 })
 
-test_that("brimmest() reaches the same verdicts by either route", {
-  # search_budget = 0 refuses the constructive search everything, so the
-  # corridor DP answers instead: the two must not disagree
+test_that("an exhausted search budget errors rather than guessing", {
+  # with no fallback route left, a report the search cannot settle must say so
+  # rather than return a verdict it has not earned. search_budget = 0 refuses
+  # the search everything, which is the only way to provoke this on demand.
   args <- list(l = 0, u = 20, n = 30, digits = 1,
                mean = c(10.0, 9.7, 0.2, 19.9, 3.4),
                sd   = c(5.0, 0.1, 0.5, 0.2, 12.0))
-  fast <- do.call(brimmest, args)
-  slow <- do.call(brimmest, c(args, list(search_budget = 0)))
-  expect_identical(fast$possible, slow$possible)
-  expect_identical(fast$rules, slow$rules)
+  expect_true(all(do.call(brimmest, args)$possible %in% c(TRUE, FALSE)))
+  expect_error(do.call(brimmest, c(args, list(search_budget = 0))),
+               "search_budget")
 })
 
 test_that("a design the lattice refuses is certified anyway", {
   # 0-63 at n = 50 needs a 3151 x 24801 state table, so only the targeted
-  # routes can answer at all -- and the fast path answers immediately
+  # route can answer at all -- and the fast path answers immediately
   r <- brimmest(l = 0, u = 63, n = 50, mean = 30.42, sd = 12.71, digits = 2)
   expect_true(r$possible)
 })

@@ -11,9 +11,9 @@ umbrella_contour(umbrella, by = NULL)
 from \code{sd_region_data(rule = "integer")} — anything with \code{mean} and \code{sd},
 filtered by \code{consistent} when that column is present.}
 
-\item{by}{Mean spacing that separates a genuine gap from the striping;
+\item{by}{Mean spacing that separates a true gap from the striping;
 defaults to the median spacing between the means that have a consistent
-tuple. Give it explicitly to keep a narrow genuine gap from being bridged.}
+tuple. Give it explicitly to keep a narrow true gap from being bridged.}
 }
 \value{
 A long-format data frame with \code{mean}, \code{y} and a \code{ring} id, as
@@ -26,15 +26,14 @@ at each mean the lowest and highest consistent SD, handed to
 it is returned as data so the outline can be drawn elsewhere, or measured.
 }
 \details{
-\code{by} is the spacing that tells a genuine gap in the umbrella from its
-ordinary striping, and it defaults to the median gap between the means that
-\emph{have} a consistent tuple rather than to the reporting grid's step. Under
-\code{Z = "integer"} only the means an integer sum can round to survive, so on the
+\code{by} is the spacing that tells a true gap in the umbrella from its ordinary
+striping, and it defaults to the median gap between the means that \emph{have} a
+consistent tuple rather than to the reporting grid's step. Under \code{Z = "integer"} only the means an integer sum can round to survive, so on the
 reporting grid almost every neighbouring pair of means is a gap; splitting
 there would make each stripe its own one-column ring, and a one-column ring
 has no width to draw. The median of the realised spacing is the striping's
-own period, so the stripes join into the envelope and only a genuine stretch
-of infeasible means — wider than \code{1.5 * by} — still splits the region.
+own period, so the stripes join into the envelope and only a true stretch of
+infeasible means — wider than \code{1.5 * by} — still splits the region.
 
 The contour therefore claims less than the tuples do: it says which \verb{(mean, sd)} pairs are near the region the tests admit, not which ones are in it.
 }

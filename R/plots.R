@@ -1,5 +1,73 @@
 # ggplot2 visualisations of the SD bounds, POMP-normalised bounds, and umbrella.
 
+# Internal: shade the whole panel, then knock the feasible region out of it.
+# The shared construction behind plot_sd_bounds(), plot_sd_region() and
+# plot_umbrella(shade = "outside").
+#
+# Doing it this way rather than assembling the grey from side rectangles and
+# ribbons means a mean at which the region is undefined stays shaded by
+# construction: there is nothing there to knock out. Assembling the grey
+# instead leaves such a gap unshaded, which would assert that any SD at all is
+# possible there. See band_polygon().
+#
+# `rings` is band_polygon()/umbrella_contour() output, or NULL when nothing is
+# feasible. With `shade = FALSE` there is no grey to knock a hole in, so the
+# rings are left unfilled and whatever sits underneath shows through; `colour`
+# strokes their outline (plot_umbrella(style = "contour")) and NA leaves them
+# unstroked.
+.knockout_layers <- function(
+  rings,
+  shade = TRUE,
+  colour = NA,
+  linewidth = 0.35
+) {
+  c(
+    if (shade) {
+      list(ggplot2::annotate(
+        "rect",
+        xmin = -Inf,
+        xmax = Inf,
+        ymin = -Inf,
+        ymax = Inf,
+        fill = "grey10",
+        alpha = 0.12
+      ))
+    },
+    if (!is.null(rings)) {
+      args <- list(
+        data = rings,
+        mapping = ggplot2::aes(
+          x = .data$mean,
+          y = .data$y,
+          group = .data$ring
+        ),
+        inherit.aes = FALSE,
+        fill = if (shade) "white" else NA
+      )
+      # A plain knockout draws no outline, so it leaves linewidth at the geom
+      # default rather than setting one nothing renders. Only the stroked
+      # contour needs it.
+      if (!is.na(colour)) {
+        args <- c(args, list(colour = colour, linewidth = linewidth))
+      }
+      list(do.call(ggplot2::geom_polygon, args))
+    }
+  )
+}
+
+# Internal: the plotted window, padded by a proportion of the scale width
+# rather than a fixed number of SD units, so the margin looks the same on a
+# 1-5 scale and a 0-100 one. Limits are set explicitly rather than left to
+# ggplot2 because the outside shading needs finite ones.
+.padded_coord <- function(lo, hi, y_hi, expand) {
+  pad <- expand * (hi - lo)
+  ggplot2::coord_cartesian(
+    xlim = c(lo - pad, hi + pad),
+    ylim = c(-pad, y_hi + pad),
+    expand = FALSE
+  )
+}
+
 .bounds_point_layer <- function(pts, xvar, yvar) {
   if (is.null(pts[["consistent"]])) {
     pts$consistent <- NA
@@ -82,14 +150,11 @@ plot_sd_bounds <- function(
   shade <- match.arg(shade)
   cur <- curve[curve$feasible & is.finite(curve$max_sd), ]
 
-  # Padding is a proportion of the scale width, not a fixed SD amount, so the
-  # margin is visually constant across scales of very different widths.
   lo_m <- min(cur$mean)
   hi_m <- max(cur$mean)
-  pad <- expand * (hi_m - lo_m)
-  # Shading the outside needs finite limits, and finite limits will silently
-  # clip an out-of-bounds point - exactly the case the plot exists to show -
-  # so the ceiling of the view must account for the reported points as well.
+  # Finite limits will silently clip an out-of-bounds point - exactly the case
+  # the plot exists to show - so the ceiling of the view must account for the
+  # reported points as well.
   y_hi <- max(c(cur$max_sd, points$sd), na.rm = TRUE)
 
   p <- ggplot2::ggplot(cur, ggplot2::aes(x = .data$mean))
@@ -100,12 +165,6 @@ plot_sd_bounds <- function(
         fill = fill
       )
   } else {
-    # Shade the whole panel, then knock the feasible rings out of it. Doing it
-    # this way rather than assembling the grey from side rectangles and ribbons
-    # means a mean at which the band is undefined stays shaded by construction:
-    # there is nothing there to knock out. Assembling the grey instead leaves
-    # such a gap unshaded, which would assert that any SD at all is possible
-    # there. See band_polygon().
     # band_polygon() needs the grid spacing to tell a sampling gap from a
     # genuine one, and sd_bounds_curve() records the spacing it used because
     # its grid is not uniform: it adds each kink of the 1/(n * n_items) lattice
@@ -127,34 +186,12 @@ plot_sd_bounds <- function(
         1
       }
     )
-    p <- p +
-      ggplot2::annotate(
-        "rect",
-        xmin = -Inf,
-        xmax = Inf,
-        ymin = -Inf,
-        ymax = Inf,
-        fill = "grey10",
-        alpha = 0.12
-      )
-    if (!is.null(rings)) {
-      p <- p +
-        ggplot2::geom_polygon(
-          data = rings,
-          ggplot2::aes(x = .data$mean, y = .data$y, group = .data$ring),
-          inherit.aes = FALSE,
-          fill = "white"
-        )
-    }
+    p <- p + .knockout_layers(rings)
   }
   p <- p +
     ggplot2::geom_line(ggplot2::aes(y = .data$max_sd), colour = line_colour) +
     ggplot2::geom_line(ggplot2::aes(y = .data$min_sd), colour = line_colour) +
-    ggplot2::coord_cartesian(
-      xlim = c(lo_m - pad, hi_m + pad),
-      ylim = c(-pad, y_hi + pad),
-      expand = FALSE
-    ) +
+    .padded_coord(lo_m, hi_m, y_hi, expand) +
     ggplot2::labs(x = "Mean", y = "SD", title = title) +
     ggplot2::theme_minimal()
   if (!is.null(points)) {
@@ -260,7 +297,7 @@ plot_sd_bounds_pomp <- function(
 
 #' Plot the umbrella grid
 #'
-#' Renders the reportable `(mean, sd)` tuples of a design, in either of two
+#' Renders the reportable `(mean, sd)` tuples of a design, in any of three
 #' styles. Optionally overlays the bound curves from [sd_bounds_curve()].
 #'
 #' `style = "points"` (default) greys the whole panel and draws only the
@@ -424,43 +461,25 @@ plot_umbrella <- function(
 
   lo_m <- min(umbrella$mean)
   hi_m <- max(umbrella$mean)
-  pad <- expand * (hi_m - lo_m)
   y_hi <- max(c(pts$sd, curve$max_sd), na.rm = TRUE)
 
   p <- ggplot2::ggplot(pts, ggplot2::aes(.data$mean, .data$sd))
-  if (shade == "outside") {
-    # the panel is infeasible everywhere except at the points themselves
-    p <- p +
-      ggplot2::annotate(
-        "rect",
-        xmin = -Inf,
-        xmax = Inf,
-        ymin = -Inf,
-        ymax = Inf,
-        fill = "grey10",
-        alpha = 0.12
-      )
-  }
-
   if (style == "contour") {
     # Rings rather than a ribbon, for the reason band_polygon() exists: where
     # the umbrella genuinely stops, the shading must stay, and a ring leaves it
-    # there by construction. The knockout is white, as in `plot_sd_bounds()`;
-    # with nothing to knock out of, the ring is left unfilled instead, so
-    # whatever is underneath shows through.
-    rings <- umbrella_contour(pts, by = contour_by)
-    if (!is.null(rings)) {
-      p <- p +
-        ggplot2::geom_polygon(
-          data = rings,
-          ggplot2::aes(x = .data$mean, y = .data$y, group = .data$ring),
-          inherit.aes = FALSE,
-          fill = if (shade == "outside") "white" else NA,
-          colour = line_colour,
-          linewidth = 0.35
-        )
-    }
+    # there by construction.
+    p <- p +
+      .knockout_layers(
+        umbrella_contour(pts, by = contour_by),
+        shade = shade == "outside",
+        colour = line_colour
+      )
   } else {
+    # the panel is infeasible everywhere except at the points themselves, so
+    # there is nothing to knock out of the shading
+    if (shade == "outside") {
+      p <- p + .knockout_layers(NULL)
+    }
     if (is.null(point_size)) {
       point_size <- if (nrow(pts) > 12000) {
         0.045
@@ -500,11 +519,7 @@ plot_umbrella <- function(
       )
   }
   p +
-    ggplot2::coord_cartesian(
-      xlim = c(lo_m - pad, hi_m + pad),
-      ylim = c(-pad, y_hi + pad),
-      expand = FALSE
-    ) +
+    .padded_coord(lo_m, hi_m, y_hi, expand) +
     ggplot2::labs(x = "Mean", y = "Sample standard deviation", title = title) +
     ggplot2::theme_minimal() +
     ggplot2::theme(panel.grid.minor = ggplot2::element_blank())

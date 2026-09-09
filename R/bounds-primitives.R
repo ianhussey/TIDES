@@ -596,11 +596,15 @@ sd_bounds_alpha <- function(l, u, n, mean, Z, alpha, k_items) {
 #' Infer the number of reported decimal places
 #'
 #' From a character input, the count of digits after the decimal point (so
-#' `"2.90"` gives 2). From a numeric input the same after `as.character()`,
-#' which cannot see trailing zeros (`2.90` gives 1) — pass the reported value
-#' as a string to preserve them, as the scrutiny package advises.
+#' `"2.90"` gives 2). From a numeric input the same, which cannot see trailing
+#' zeros (`2.90` gives 1) — pass the reported value as a string to preserve
+#' them, as the scrutiny package advises.
 #'
-#' @param x Character or numeric scalar, the reported value.
+#' A thin alias for [scrutiny::decimal_places()], kept because the reported
+#' decimal places are an argument to most of this package's entry points and
+#' naming the operation here saves the caller a second attached package.
+#'
+#' @param x Character or numeric vector, the reported value(s).
 #' @return Integer, the inferred number of decimal places.
 #' @examples
 #' # a string preserves trailing zeros
@@ -610,13 +614,7 @@ sd_bounds_alpha <- function(l, u, n, mean, Z, alpha, k_items) {
 #' infer_digits(2.90)
 #' infer_digits(3)
 #' @export
-infer_digits <- function(x) {
-  s <- if (is.character(x)) x else as.character(x)
-  if (!grepl("\\.", s)) {
-    return(0L)
-  }
-  nchar(sub("^-?[0-9]*\\.", "", s))
-}
+infer_digits <- function(x) scrutiny::decimal_places(x)
 
 #' Reconstruct the interval of exact values behind a rounded/truncated report
 #'
@@ -642,6 +640,26 @@ infer_digits <- function(x) {
 #' [infer_digits()], preserving trailing zeros); a numeric `x` with `digits`
 #' missing is an error, because trailing zeros cannot be recovered from a
 #' numeric.
+#'
+#' The interval itself is computed by [scrutiny::unround()] rather than here,
+#' so that this package and the rest of the error-detection ecosystem unround
+#' a report the same way. This function is the adapter: it names the endpoints
+#' `lo`/`hi`/`lo_incl`/`hi_incl` and returns a plain list, which is the shape
+#' the bounds machinery consumes, and it carries `digits` back out.
+#'
+#' One case differs from the hand-rolled predecessor this replaced, and
+#' scrutiny is the one that is right: `x = 0` under `"trunc"` or
+#' `"anti_trunc"`. Truncation toward zero has no defined direction at zero
+#' itself, so the old code silently took the positive branch and returned
+#' `[0, unit)`. scrutiny returns the sign-agnostic `(-unit, unit)` for
+#' `"trunc"` and the degenerate `[0, 0]` for `"anti_trunc"`.
+#'
+#' Both consumers absorb the difference, so no verdict moves: [sd_bounds()]
+#' intersects the mean's interval with the feasible mean band, which clips a
+#' below-scale endpoint back to `l`, and `brimmest()` clamps a reported SD's
+#' interval to non-negative before squaring it. The wider interval is in any
+#' case the conservative direction — it admits more exact values behind the
+#' report, never fewer.
 #'
 #' @param x Numeric scalar, the reported value (character accepted for
 #'   digit inference only).
@@ -684,27 +702,12 @@ unround_interval <- function(
     }
     digits <- infer_digits(x)
   }
-  xv <- as.numeric(x)
-  unit <- 10^(-digits)
-  h <- unit / 2
-  res <- switch(
-    rounding,
-    up_or_down = list(lo = xv - h, hi = xv + h, lo_incl = TRUE, hi_incl = TRUE),
-    up = list(lo = xv - h, hi = xv + h, lo_incl = TRUE, hi_incl = FALSE),
-    down = list(lo = xv - h, hi = xv + h, lo_incl = FALSE, hi_incl = TRUE),
-    even = list(lo = xv - h, hi = xv + h, lo_incl = TRUE, hi_incl = TRUE),
-    ceiling = list(lo = xv - unit, hi = xv, lo_incl = FALSE, hi_incl = TRUE),
-    floor = list(lo = xv, hi = xv + unit, lo_incl = TRUE, hi_incl = FALSE),
-    trunc = if (xv >= 0) {
-      list(lo = xv, hi = xv + unit, lo_incl = TRUE, hi_incl = FALSE)
-    } else {
-      list(lo = xv - unit, hi = xv, lo_incl = FALSE, hi_incl = TRUE)
-    },
-    anti_trunc = if (xv >= 0) {
-      list(lo = xv - unit, hi = xv, lo_incl = FALSE, hi_incl = TRUE)
-    } else {
-      list(lo = xv, hi = xv + unit, lo_incl = TRUE, hi_incl = FALSE)
-    }
+  iv <- scrutiny::unround(x, rounding = rounding, digits = digits)
+  list(
+    lo = iv$lower,
+    hi = iv$upper,
+    lo_incl = iv$incl_lower,
+    hi_incl = iv$incl_upper,
+    digits = digits
   )
-  c(res, list(digits = digits))
 }

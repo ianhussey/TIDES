@@ -301,26 +301,6 @@ sd_bounds <- function(
       stringsAsFactors = FALSE
     )
   }
-  base_res <- function(note = NA_character_) {
-    list(grim = NA, grimmer = NA, sd_in_bounds = NA, note = note)
-  }
-  infeasible <- function(note, extra = base_res()) {
-    extra$min_sd <- NA_real_
-    extra$max_sd <- NA_real_
-    extra$feasible <- FALSE
-    extra$min_rule <- NA_character_
-    extra$max_rule <- NA_character_
-    extra$note <- if (is.na(extra$note)) {
-      note
-    } else {
-      paste(extra$note, note, sep = "; ")
-    }
-    if (is.na(extra$note)) {
-      extra$note <- note
-    }
-    extra$note <- note
-    out(extra)
-  }
 
   # -- validate ----------------------------------------------------------------
   Z <- match.arg(Z)

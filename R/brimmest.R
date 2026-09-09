@@ -56,7 +56,7 @@
 #' pins both coordinates almost completely: the mean's rounding interval
 #' admits only a few integer sums, and each of those pins the sum of squares
 #' to a narrow window. That reduces certification to a question about one
-#' sample sum at a time, which is answered in three escalating steps.
+#' sample sum at a time, which is answered in two escalating steps.
 #'
 #' A closed-form sandwich comes first. For a given sum the achievable sums of
 #' squares lie between the clustered configuration and the Structure-S one,
@@ -65,15 +65,13 @@
 #' constructive search over non-increasing samples — the partitions of the sum
 #' — with the same sandwich re-applied at every step to what is left to place.
 #' Reaching a complete sample proves possibility and produces a witness;
-#' exhausting the search proves impossibility. Only when neither happens
-#' inside `search_budget` does the corridor sweep run: a dynamic program
-#' confined to the states that can still reach a target, roughly a tenth of
-#' the full table.
+#' exhausting the search proves impossibility. The verdict is therefore exact
+#' in both directions whenever the search terminates, and `search_budget` —
+#' not the absence of a theorem — is the only thing that can withhold one.
 #'
 #' The practical effect is that designs the lattice refuses outright become
-#' answerable — a 0-63 inventory at `n = 50` needs a 3151 x 24801 table — and
-#' that the overwhelming majority of single reports are settled without any
-#' sweep at all.
+#' answerable — a 0-63 inventory at `n = 50` needs a 3151 x 24801 table, and
+#' certifies in milliseconds without one.
 #'
 #' @section Rounding and the direction of proof:
 #' A hit certifies possibility under whichever rounding rule produced it. A
@@ -101,12 +99,14 @@
 #'   any of them.
 #' @param scoring "singleitem" (default), "sumscored", or "meanscored".
 #' @param n_items Positive whole number of response items (default 1).
-#' @param max_cells Guard on the dynamic program's state space (default
-#'   `2e7`); the enumeration errors rather than exhausting memory above it.
+#' @param max_cells Guard on the lattice enumeration's state space (default
+#'   `2e7`); a design above it takes the targeted route instead, and the
+#'   lattice errors rather than exhausting memory if asked for directly.
 #' @param search_budget Node budget for the constructive search (default
-#'   `2e5`). Raising it lets the search settle more reports on its own;
-#'   lowering it hands them to the corridor sweep sooner. The verdict is the
-#'   same either way — only which route produces it changes.
+#'   `2e5`). Measured across 2,719,364 reporting-grid cells and six designs
+#'   the budget was never reached, so this is a safety valve rather than a
+#'   tuning knob; a report that does exhaust it errors rather than returning
+#'   a guess.
 #' @return A data.frame with one row per reported tuple: `mean`, `sd`,
 #'   `possible` (logical), and `rules` — the rounding rules under which the
 #'   tuple is reachable, comma-separated and `""` when none.
@@ -183,10 +183,11 @@ brimmest <- function(
 
   # Two routes to the same verdict, chosen by how much work each implies.
   #
-  # Targeted (see R/attainable-target.R): reachability of just the states the
-  # report pins down. Cost is per tuple, so it wins for a handful of reports,
-  # and it is the only route on wide scales, where the full lattice exceeds
-  # its own size guard.
+  # Targeted (see R/attainable-target.R for the states, R/certify-sandwich.R
+  # for the decision): arithmetic and a constructive search over just the
+  # states the report pins down. Cost is per tuple, so it wins for a handful
+  # of reports, and it is the only route on wide scales, where the full
+  # lattice exceeds its own size guard.
   #
   # Lattice: enumerate every attainable pair once and match against it. Cost
   # is per design regardless of how many tuples are asked about, so it wins
@@ -209,18 +210,16 @@ brimmest <- function(
           seq_len(nn),
           function(i) {
             tg <- .target_states(l, u, n, g$mg, mean[i], sd[i], md, sdd, rr)
-            # Arithmetic and a pruned constructive search first (see
-            # R/certify-sandwich.R); the corridor sweep only for what they leave
-            # undecided. Both give the same verdict, so the order is purely a
-            # matter of cost.
+            # Arithmetic and a pruned constructive search (see
+            # R/certify-sandwich.R). Exhausting the search tree is a proof of
+            # impossibility, so a verdict is withheld only when the node budget
+            # cuts the search short first.
             got <- .certify_fast(W, n, tg, budget = search_budget)
             if (is.na(got)) {
-              got <- .attainable_target(W, n, tg, max_cells = max_cells)
-            }
-            if (is.na(got)) {
               stop(
-                "this design is too large to certify at the requested precision; ",
-                "raise max_cells, or report to fewer decimal places"
+                "this report was not settled within search_budget = ",
+                search_budget,
+                " nodes; raise search_budget, or report to fewer decimal places"
               )
             }
             got
@@ -319,9 +318,6 @@ brimmest <- function(
 #'                   include_inputs = FALSE)
 #' @export
 brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
-  if (!is.data.frame(data)) {
-    stop("data must be a data frame")
-  }
   row_args <- c(
     "l",
     "u",
@@ -336,40 +332,13 @@ brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
   )
   call_args <- c("rounding", "max_cells", "search_budget")
   consts <- list(...)
-  unknown <- setdiff(names(consts), c(row_args, call_args))
-  if (length(unknown)) {
-    stop("unknown constant argument(s): ", paste(unknown, collapse = ", "))
-  }
-  clash <- intersect(call_args, names(data))
-  if (length(clash)) {
-    stop(
-      paste(clash, collapse = ", "),
-      " applies to the whole call, not to ",
-      "one row; supply it as a constant rather than a column"
-    )
-  }
+  cols <- .resolve_row_args(data, consts, row_args, call_args)
+  present <- names(cols)
 
   N <- nrow(data)
   if (!N) {
     stop("data has no rows")
   }
-  resolve <- function(nm) {
-    incol <- nm %in% names(data)
-    incon <- nm %in% names(consts) && !is.null(consts[[nm]])
-    if (incol && incon) {
-      stop(sprintf("'%s' supplied as both a column and a constant", nm))
-    }
-    if (incol) {
-      data[[nm]]
-    } else if (incon) {
-      rep(consts[[nm]], length.out = N)
-    } else {
-      NULL
-    }
-  }
-  cols <- lapply(row_args, resolve)
-  names(cols) <- row_args
-  present <- row_args[!vapply(cols, is.null, logical(1))]
   for (nm in c("l", "u", "n", "mean", "sd")) {
     if (!(nm %in% present)) {
       stop(sprintf("'%s' is required (as a column of data or a constant)", nm))
@@ -389,8 +358,7 @@ brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
   # route, so handing it a whole group at once is both cheaper and better
   # routed than calling it per row would be.
   design <- setdiff(present, c("mean", "sd"))
-  fmt <- function(nm) format(cols[[nm]], nsmall = 6, trim = TRUE)
-  gkey <- do.call(paste, c(lapply(design, fmt), sep = "\r"))
+  gkey <- .row_key(cols[design])
 
   possible <- logical(N)
   rules <- character(N)
@@ -400,11 +368,7 @@ brimmest_multiple <- function(data, ..., include_inputs = TRUE) {
     names(args) <- design
     mu <- cols$mean[ix]
     sg <- cols$sd[ix]
-    tk <- paste(
-      format(mu, nsmall = 6, trim = TRUE),
-      format(sg, nsmall = 6, trim = TRUE),
-      sep = "\r"
-    )
+    tk <- .row_key(list(mu, sg))
     uk <- !duplicated(tk)
     r <- do.call(brimmest, c(args, list(mean = mu[uk], sd = sg[uk]), passthru))
     back <- match(tk, tk[uk])

@@ -326,6 +326,60 @@ brim <- function(
 
 # ---- Layer 6: batch report checking ------------------------------------------
 
+# Internal: resolve the recognised arguments of a batch call to per-row
+# vectors. Shared by brimmer_multiple() and brimmest_multiple(), which take the
+# same shape of input: a data frame whose columns supply per-row values, plus
+# `...` constants broadcast to every row.
+#
+# `row_args` are the names that may come either way; `call_args` are names that
+# apply to the whole call (a set of rounding rules, a cost budget) and so may
+# only be constants -- passing one as a column is an error rather than a silent
+# per-row reading. Returns only the arguments actually supplied, so the caller
+# reads the names off the result rather than tracking presence itself.
+.resolve_row_args <- function(data, consts, row_args, call_args = character(0)) {
+  if (!is.data.frame(data)) {
+    stop("data must be a data frame")
+  }
+  unknown <- setdiff(names(consts), c(row_args, call_args))
+  if (length(unknown)) {
+    stop("unknown constant argument(s): ", paste(unknown, collapse = ", "))
+  }
+  clash <- intersect(call_args, names(data))
+  if (length(clash)) {
+    stop(
+      paste(clash, collapse = ", "),
+      " applies to the whole call, not to ",
+      "one row; supply it as a constant rather than a column"
+    )
+  }
+  N <- nrow(data)
+  cols <- lapply(row_args, function(nm) {
+    incol <- nm %in% names(data)
+    incon <- nm %in% names(consts) && !is.null(consts[[nm]])
+    if (incol && incon) {
+      stop(sprintf("'%s' supplied as both a column and a constant", nm))
+    }
+    if (incol) {
+      data[[nm]]
+    } else if (incon) {
+      rep(consts[[nm]], length.out = N)
+    } else {
+      NULL
+    }
+  })
+  names(cols) <- row_args
+  cols[!vapply(cols, is.null, logical(1))]
+}
+
+# Internal: a grouping key over parallel vectors, for computing once per
+# distinct input tuple instead of once per row. format() at a fixed nsmall
+# keeps 3 and 3.0 in the same group without the ambiguity of pasting raw
+# numerics, and "\r" cannot occur in a formatted number, so the join is
+# unambiguous.
+.row_key <- function(vals) {
+  do.call(paste, c(lapply(vals, format, nsmall = 6, trim = TRUE), sep = "\r"))
+}
+
 #' Check many reported (mean, SD, n) rows against the SD bounds
 #'
 #' Applies [brimmer()] to each row of a data frame, de-duplicating
@@ -358,9 +412,6 @@ brim <- function(
 #' out[, c("mean", "sd", "n", "consistent", "failed_tests")]
 #' @export
 brimmer_multiple <- function(data, ..., include_inputs = TRUE) {
-  if (!is.data.frame(data)) {
-    stop("data must be a data frame")
-  }
   arg_names <- c(
     "l",
     "u",
@@ -377,43 +428,14 @@ brimmer_multiple <- function(data, ..., include_inputs = TRUE) {
     "n_items",
     "alpha"
   )
-  consts <- list(...)
-  unknown <- setdiff(names(consts), arg_names)
-  if (length(unknown)) {
-    stop("unknown constant argument(s): ", paste(unknown, collapse = ", "))
-  }
-  N <- nrow(data)
-  resolve <- function(nm) {
-    incol <- nm %in% names(data)
-    incon <- nm %in% names(consts) && !is.null(consts[[nm]])
-    if (incol && incon) {
-      stop(sprintf("'%s' supplied as both a column and a constant", nm))
-    }
-    if (incol) {
-      data[[nm]]
-    } else if (incon) {
-      rep(consts[[nm]], length.out = N)
-    } else {
-      NULL
-    }
-  }
-  cols <- lapply(arg_names, resolve)
-  names(cols) <- arg_names
-  present <- arg_names[!vapply(cols, is.null, logical(1))]
+  cols <- .resolve_row_args(data, list(...), arg_names)
+  present <- names(cols)
   if (!("sd" %in% present)) {
     stop("a reported sd is required (as a column of data or a constant)")
   }
 
   # de-duplicate identical input tuples; compute once per unique tuple
-  key <- do.call(
-    paste,
-    c(
-      lapply(present, function(nm) {
-        format(cols[[nm]], nsmall = 6, trim = TRUE)
-      }),
-      sep = "\r"
-    )
-  )
+  key <- .row_key(cols)
   uk_idx <- which(!duplicated(key))
   back <- match(key, key[uk_idx])
   res_uni <- do.call(

@@ -100,7 +100,7 @@ test_that("the targeted route and the lattice route give identical verdicts", {
       got <- vapply(seq_len(nrow(grid)), function(i) {
         tg <- strait:::.target_states(l, u, n, 1, grid$mean[i], grid$sd[i],
                                       1, 1, rr)
-        isTRUE(strait:::.attainable_target(as.integer(u - l), n, tg))
+        isTRUE(.attainable_target(as.integer(u - l), n, tg))
       }, logical(1))
       expect_identical(got, ref)
     }

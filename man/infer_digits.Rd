@@ -7,16 +7,21 @@
 infer_digits(x)
 }
 \arguments{
-\item{x}{Character or numeric scalar, the reported value.}
+\item{x}{Character or numeric vector, the reported value(s).}
 }
 \value{
 Integer, the inferred number of decimal places.
 }
 \description{
 From a character input, the count of digits after the decimal point (so
-\code{"2.90"} gives 2). From a numeric input the same after \code{as.character()},
-which cannot see trailing zeros (\code{2.90} gives 1) — pass the reported value
-as a string to preserve them, as the scrutiny package advises.
+\code{"2.90"} gives 2). From a numeric input the same, which cannot see trailing
+zeros (\code{2.90} gives 1) — pass the reported value as a string to preserve
+them, as the scrutiny package advises.
+}
+\details{
+A thin alias for \code{\link[scrutiny:decimal_places]{scrutiny::decimal_places()}}, kept because the reported
+decimal places are an argument to most of this package's entry points and
+naming the operation here saves the caller a second attached package.
 }
 \examples{
 # a string preserves trailing zeros
